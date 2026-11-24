@@ -1,0 +1,2350 @@
+<!DOCTYPE html>
+<html class="dark" lang="tr">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>BlastMaster Pro - Açık Ocak Patlatma Tasarımı &amp; Analiz Süiti</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+        darkMode: 'class',
+        theme: {
+            extend: {
+                colors: {
+                    brand: { 400: '#34d399', 500: '#10b981', 600: '#059669' },
+                    accent: { 500: '#3b82f6', 600: '#2563eb' }
+                },
+                fontFamily: {
+                    sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    mono: ['JetBrains Mono', 'Fira Code', 'Courier New', 'monospace']
+                }
+            }
+        }
+    }
+</script>
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;family=JetBrains+Mono:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<style>
+    body { -webkit-tap-highlight-color: transparent; }
+    input[type=range] { accent-color: #10b981; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    html:not(.dark) ::-webkit-scrollbar-track { background: #f1f5f9; }
+    html:not(.dark) ::-webkit-scrollbar-thumb { background: #cbd5e1; }
+    .tab-btn.active { background: #059669; color: #ffffff; font-weight: 700; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35); }
+    .seg-btn { padding: 4px 12px; font-size: 11px; font-weight: 600; border-radius: 8px; color: #94a3b8; transition: .15s; }
+    .seg-btn.active { background: #059669; color: #ffffff; }
+    html:not(.dark) .seg-btn { color: #64748b; }
+    html:not(.dark) .seg-btn.active { color: #ffffff; }
+    .calc-table { border-collapse: collapse; }
+    .calc-table td { padding: 6px 0; }
+    .calc-table td:last-child { text-align: right; }
+
+    /* ===== Açık tema (html.dark yokken) ===== */
+    html:not(.dark) body { background: #f1f5f9; color: #0f172a; }
+    html:not(.dark) .bg-slate-950 { background-color: #f8fafc; }
+    html:not(.dark) .bg-slate-900 { background-color: #ffffff; }
+    html:not(.dark) .bg-slate-800, html:not(.dark) .bg-slate-700 { background-color: #e2e8f0; }
+    html:not(.dark) [class*="bg-slate-950/"] { background-color: rgba(241,245,249,.92); }
+    html:not(.dark) [class*="bg-slate-900/"] { background-color: rgba(255,255,255,.92); }
+    html:not(.dark) [class*="bg-slate-800/"] { background-color: #e2e8f0; }
+    html:not(.dark) .hover\:bg-slate-800:hover, html:not(.dark) .hover\:bg-slate-700:hover,
+    html:not(.dark) .hover\:bg-slate-600:hover, html:not(.dark) .hover\:bg-slate-700\/80:hover { background-color: #cbd5e1; }
+    html:not(.dark) .border-slate-800 { border-color: #e2e8f0; }
+    html:not(.dark) .border-slate-700, html:not(.dark) [class*="border-slate-700/"] { border-color: #cbd5e1; }
+    html:not(.dark) .divide-slate-800 > :not([hidden]) ~ :not([hidden]) { border-color: #e2e8f0; }
+    html:not(.dark) .text-slate-100, html:not(.dark) .text-slate-200,
+    html:not(.dark) :is(h1,h2,h3,span,label).text-white { color: #0f172a; }
+    html:not(.dark) .text-slate-300 { color: #334155; }
+    html:not(.dark) .text-slate-400, html:not(.dark) .text-slate-500 { color: #64748b; }
+    html:not(.dark) .text-brand-400, html:not(.dark) .text-emerald-400, html:not(.dark) .text-emerald-300 { color: #047857; }
+    html:not(.dark) .text-amber-400, html:not(.dark) .text-amber-300 { color: #b45309; }
+    html:not(.dark) .text-sky-400, html:not(.dark) .text-sky-300 { color: #0369a1; }
+    html:not(.dark) .text-purple-400 { color: #7e22ce; }
+    html:not(.dark) .text-red-400 { color: #b91c1c; }
+    html:not(.dark) .tab-btn.active { color: #ffffff; }
+    html:not(.dark) #sdobNeedle line { stroke: #0f172a; }
+    html:not(.dark) #sdobNeedle polygon { fill: #0f172a; }
+
+    /* Sipariş Formu Tablosu */
+    .order-sheet-table { width: 100%; background-color: #ffffff !important; color: #000000 !important; border-collapse: collapse !important; border: 1.5px solid #000000 !important; font-size: 12px; }
+    .order-sheet-table th, .order-sheet-table td { border: 1.5px solid #000000 !important; text-align: center !important; vertical-align: middle !important; padding: 6px 8px; color: #000000 !important; }
+    .order-sheet-table th { background-color: #f1f5f9 !important; font-weight: 700; }
+    .order-sheet-table input, .order-sheet-table select { color: #000000 !important; background-color: #ffffff !important; text-align: center !important; border: 1px solid #94a3b8; border-radius: 4px; padding: 3px 6px; font-size: 12px; }
+
+    @media print {
+        @page { size: A4 portrait; margin: 10mm 12mm; }
+        html, body { background: #ffffff !important; color: #000000 !important; margin: 0 !important; padding: 0 !important; height: auto !important; overflow: visible !important; }
+        .no-print, .order-no-print { display: none !important; }
+        body * { visibility: hidden !important; }
+        /* Hangi belge basılacaksa yalnızca onun modu (print-order / print-report) açılır */
+        body.print-order #orderPrintModal, body.print-report #reportModal {
+            position: static !important; inset: auto !important; display: block !important;
+            padding: 0 !important; margin: 0 !important; background: #ffffff !important;
+            overflow: visible !important; backdrop-filter: none !important;
+        }
+        body.print-order #orderPrintModal * { max-height: none !important; overflow: visible !important; }
+        body.print-order #printableA4Document, body.print-order #printableA4Document *,
+        body.print-report #reportPrintable, body.print-report #reportPrintable * { visibility: visible !important; }
+        body.print-order #printableA4Document { position: static !important; width: 100% !important; max-width: 100% !important; min-height: 0 !important; box-shadow: none !important; border: none !important; padding: 0 !important; margin: 0 !important; background: #ffffff !important; color: #000000 !important; }
+        body.print-report #reportPrintable { box-shadow: none !important; border: none !important; max-width: 100% !important; margin: 0 !important; }
+        .order-sheet-table th, .order-sheet-table td { border: 1.5px solid #000000 !important; color: #000000 !important; }
+    }
+</style>
+
+<!-- ===== MOBİL SEKME KATMANI (yalnızca ekleme; hesaplama kodu değişmedi) ===== -->
+<meta name="theme-color" content="#0f172a">
+<style id="mobileTabsCss">
+#mobileNav{display:none}
+@media (max-width:1023px){
+  body{padding-bottom:calc(66px + env(safe-area-inset-bottom,0px))}
+  header{flex-wrap:wrap;gap:8px}
+  header p.text-xs{display:none}
+  .m-orig-tabs{display:none !important}
+  body.m-inputs main{display:none}
+  body:not(.m-inputs) aside{display:none}
+  #mobileNav{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:50;
+    background:#0f172a;border-top:1px solid #334155;padding-bottom:env(safe-area-inset-bottom,0px)}
+  #mobileNav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:8px 2px;
+    min-height:58px;font-size:10.5px;font-weight:600;color:#94a3b8;background:transparent;border:0;border-top:3px solid transparent}
+  #mobileNav button span:first-child{font-size:18px;line-height:1}
+  #mobileNav button.on{color:#34d399;border-top-color:#10b981;background:rgba(16,185,129,.08)}
+  html:not(.dark) #mobileNav{background:#ffffff;border-top-color:#cbd5e1}
+  html:not(.dark) #mobileNav button{color:#475569}
+  html:not(.dark) #mobileNav button.on{color:#047857;background:rgba(16,185,129,.12)}
+}
+@media print{#mobileNav{display:none !important}}
+</style>
+
+<!-- ===== PWA (yalnızca ekleme) ===== -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BlastMaster">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style id="pwaCss">
+#pwaBanner{display:none;position:fixed;left:10px;right:10px;bottom:calc(76px + env(safe-area-inset-bottom,0px));z-index:70;
+  background:#1e293b;color:#e2e8f0;border:1px solid #10b981;border-radius:16px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.45);
+  font:14px/1.4 Inter,system-ui,sans-serif;max-width:520px;margin:0 auto}
+#pwaBanner.show{display:block}
+#pwaBanner .pwa-top{display:flex;gap:12px;align-items:center}
+#pwaBanner img{width:44px;height:44px;border-radius:10px;flex:none}
+#pwaBanner b{display:block;font-size:15px;color:#fff}
+#pwaBanner small{color:#94a3b8;font-size:12px}
+#pwaBanner .pwa-ios{margin:10px 0 0;font-size:13px;color:#cbd5e1}
+#pwaBanner .pwa-btns{display:flex;gap:8px;margin-top:12px}
+#pwaBanner button{flex:1;padding:11px 10px;border-radius:12px;font-weight:700;font-size:14px;border:1px solid #475569;background:transparent;color:#e2e8f0}
+#pwaBanner button.pwa-yes{background:#10b981;border-color:#10b981;color:#022c22}
+html:not(.dark) #pwaBanner{background:#ffffff;color:#0f172a;border-color:#059669}
+html:not(.dark) #pwaBanner b{color:#0f172a}
+html:not(.dark) #pwaBanner small,html:not(.dark) #pwaBanner .pwa-ios{color:#475569}
+html:not(.dark) #pwaBanner button{color:#0f172a;border-color:#94a3b8}
+html:not(.dark) #pwaBanner button.pwa-yes{color:#022c22}
+@media (min-width:1024px){#pwaBanner{bottom:20px}}
+@media print{#pwaBanner{display:none !important}}
+</style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-slate-950 transition-colors duration-200">
+
+<!-- HEADER / NAVIGATION -->
+<header class="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 lg:px-8 py-3 flex items-center justify-between no-print shadow-sm">
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 via-emerald-500 to-amber-500 flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-brand-500/20">
+            ⚡
+        </div>
+        <div>
+            <div class="flex items-center gap-2">
+                <h1 class="text-base lg:text-lg font-black tracking-tight text-white flex items-center gap-1.5">
+                    BlastMaster
+                </h1>
+            </div>
+            <p class="text-xs text-slate-400">Açık Ocak Patlatma Tasarımı, Sulu Delik/Hibrit Şarj &amp; Titreşim Analizi</p>
+        </div>
+    </div>
+    <div class="flex items-center gap-2 lg:gap-3">
+        <div class="hidden md:flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60 text-xs">
+            <span class="text-slate-400">Proje:</span>
+            <input class="bg-transparent border-none text-slate-200 font-semibold focus:outline-none w-44 truncate" id="metaProjName" oninput="syncProjectName(this.value)" placeholder="Proje Adı..." type="text" value="">
+        </div>
+        <button class="px-2.5 py-2 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 flex items-center gap-1.5 transition shadow-sm" id="themeToggleBtn" onclick="toggleTheme()" title="Tema Değiştir">
+            <span id="themeToggleText">🌙 Koyu</span>
+        </button>
+        <button class="px-3 py-2 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 flex items-center gap-1.5 transition" onclick="openReportModal()">
+            <span>📋 Mühendislik Raporu</span>
+        </button>
+        <button class="px-3 py-2 text-xs font-bold rounded-xl bg-brand-600 hover:bg-brand-500 text-slate-950 flex items-center gap-1.5 transition shadow-md" onclick="triggerOrderPrintConfirm()">
+            <span>PDF / Yazdır</span>
+        </button>
+    </div>
+</header>
+
+<!-- MAIN DUAL-PANEL LAYOUT -->
+<div class="flex-1 max-w-[1680px] w-full mx-auto p-3 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5 no-print">
+
+    <!-- ================= SOL PANEL: GİRDİLER (4-5 Cols) ================= -->
+    <aside class="lg:col-span-5 xl:col-span-4 space-y-4">
+        <!-- Kayaç Hazır Ayarı -->
+        <div class="bg-slate-900 rounded-2xl p-3.5 border border-slate-800 shadow-md">
+            <div class="flex justify-between items-center mb-2 gap-2">
+                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>⚡</span> Kayaç Hazır Ayarı
+                </span>
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/30 truncate" id="badgeCurrentPreset">
+                    Özel Ayar
+                </span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+                <button class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-left transition" data-preset="hard" onclick="applyRockPreset('hard')">
+                    <div class="text-xs font-bold text-slate-200">🪨 Sert Kaya</div>
+                    <div class="text-[10px] text-slate-400">Granit / Bazalt</div>
+                </button>
+                <button class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-left transition" data-preset="medium" onclick="applyRockPreset('medium')">
+                    <div class="text-xs font-bold text-slate-200">🧱 Orta Sert</div>
+                    <div class="text-[10px] text-slate-400">Kalker / Dolomit</div>
+                </button>
+                <button class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-left transition" data-preset="soft" onclick="applyRockPreset('soft')">
+                    <div class="text-xs font-bold text-slate-200">🏜️ Yumuşak</div>
+                    <div class="text-[10px] text-slate-400">Marn / Şist</div>
+                </button>
+            </div>
+        </div>
+
+        <!-- 1. Delik & Basamak Geometrisi -->
+        <div class="bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-md space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <span class="text-xs font-bold text-white flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
+                    1. Delik &amp; Basamak Geometrisi
+                </span>
+                <span class="text-[11px] text-slate-400 font-mono">D, H, B, S, θ</span>
+            </div>
+            <!-- Delik Çapı D -->
+            <div>
+                <div class="flex justify-between text-xs mb-1">
+                    <label class="text-slate-300 font-medium">Delik Çapı (D)</label>
+                    <span class="text-brand-400 font-mono font-bold"><span id="lbl_D">89</span> mm</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input class="flex-1" id="rng_D" max="311" min="64" oninput="updateVal('D', this.value)" step="1" type="range" value="89">
+                    <input class="w-20 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono font-bold text-center text-slate-100" id="num_D" onchange="updateVal('D', this.value)" placeholder="89" type="number" value="89">
+                </div>
+            </div>
+            <!-- Basamak Yüksekliği H -->
+            <div>
+                <div class="flex justify-between text-xs mb-1">
+                    <label class="text-slate-300 font-medium">Basamak Yüksekliği (H)</label>
+                    <span class="text-brand-400 font-mono font-bold"><span id="lbl_H">10.0</span> m</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input class="flex-1" id="rng_H" max="25" min="3" oninput="updateVal('H', this.value)" step="0.5" type="range" value="10">
+                    <input class="w-20 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono font-bold text-center text-slate-100" id="num_H" onchange="updateVal('H', this.value)" placeholder="10" step="0.5" type="number" value="10">
+                </div>
+            </div>
+            <!-- Farklı basamak yükseklikleri -->
+            <div class="space-y-2" id="boxBenchHeights">
+                <button class="w-full py-1.5 text-[11px] font-bold rounded-lg bg-slate-800 hover:bg-slate-700 border border-brand-500/40 text-brand-400 transition" onclick="addBenchGroup()">➕ Farklı basamak yüksekliği ekle</button>
+                <div class="hidden space-y-1.5" id="boxBenchGroups">
+                    <div class="flex items-center justify-between text-[10px] text-slate-400 gap-2">
+                        <span>Her grup: basamak yüksekliği × delik sayısı. Toplam N ve ortalama H gruplardan hesaplanır.</span>
+                        <button class="underline hover:text-white whitespace-nowrap" onclick="disableBenchGroups()">Tek yüksekliğe dön</button>
+                    </div>
+                    <div class="space-y-1.5" id="benchGroupList"></div>
+                </div>
+            </div>
+            <!-- Eğimler: Delik Eğimi (Theta) -->
+            <div>
+                <div class="flex justify-between text-xs mb-1">
+                    <label class="text-slate-300 font-medium">Delik Eğimi (θ - Düşeyden)</label>
+                    <span class="text-purple-400 font-mono font-bold" id="lbl_theta">15°</span>
+                </div>
+                <input class="w-full" id="rng_theta" max="35" min="0" oninput="updateVal('theta', this.value)" step="1" type="range" value="15">
+            </div>
+            <!-- Burden B ve Spacing S -->
+            <div class="grid grid-cols-2 gap-3 pt-1 border-t border-slate-800">
+                <div>
+                    <label class="text-xs text-slate-300 font-medium block mb-1">Yük (Burden B): <span class="text-emerald-400 font-bold" id="lbl_B">3.0</span> m</label>
+                    <input class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono font-bold text-slate-100" id="num_B" onchange="updateVal('B', this.value)" step="0.1" type="number" value="3.0">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-300 font-medium block mb-1">Aralık (Spacing S): <span class="text-emerald-400 font-bold" id="lbl_S">3.5</span> m</label>
+                    <input class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono font-bold text-slate-100" id="num_S" onchange="updateVal('S', this.value)" step="0.1" type="number" value="3.5">
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Sıkılama, Alt Delme & Booster -->
+        <div class="bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-md space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <span class="text-xs font-bold text-white flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    2. Sıkılama, Alt Delme &amp; Kapsüle Duyarlı Emülsiyon Patlayıcı
+                </span>
+                <span class="text-[11px] text-slate-400 font-mono">T, J, Booster</span>
+            </div>
+            <div>
+                <div class="flex justify-between items-center text-xs mb-1">
+                    <label class="text-slate-300 font-medium">Sıkılama Boyu (T - Eksenel)</label>
+                    <span class="text-amber-400 font-mono font-bold"><span id="lbl_T">2.5</span> m</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input class="flex-1" id="rng_T" max="6.0" min="0.5" oninput="updateVal('T', this.value)" step="0.1" type="range" value="2.5">
+                    <input class="w-20 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono font-bold text-center text-slate-100" id="num_T" onchange="updateVal('T', this.value)" step="0.1" type="number" value="2.5">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                    <label class="text-xs text-slate-300 font-medium block mb-1">Alt Delme (J): <span class="text-sky-400 font-bold" id="lbl_J">0.9</span> m</label>
+                    <input class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono font-bold text-slate-100" id="num_J" onchange="updateVal('J', this.value)" step="0.1" type="number" value="0.9">
+                </div>
+                <div>
+                    <label class="text-xs text-slate-300 font-medium block mb-1">Kapsüle Duyarlı Emülsiyon Patlayıcı (kg): <span class="text-amber-400 font-bold" id="lbl_booster">0.50</span> kg</label>
+                    <input class="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono font-bold text-slate-100" id="num_booster" onchange="updateVal('booster', this.value)" step="0.05" type="number" value="0.5">
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. DELİK İÇİ SU DURUMU, PATLAYICI & KAYAÇ YOĞUNLUKLARI -->
+        <div class="bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-md space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <span class="text-xs font-bold text-white flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+                    3. Su Durumu, Patlayıcı &amp; Kayaç
+                </span>
+                <span class="text-[11px] text-slate-400 font-mono">Su, ρ_e, ρ_r</span>
+            </div>
+
+            <!-- SU GİRİŞ VE YÖNETİM MODÜLÜ -->
+            <div class="p-3 bg-slate-950/80 rounded-xl border border-sky-500/30 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-sky-400 flex items-center gap-1.5">
+                        <span>💧</span> Delik İçi Su Seviyesi Girişi
+                    </span>
+                    <span class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-300 border border-sky-500/30" id="badgeWaterSummary">0/24 Delik Sulu (0.0m)</span>
+                </div>
+                <!-- Su Giriş Modu Düğmeleri -->
+                <div class="grid grid-cols-2 p-0.5 bg-slate-900 rounded-lg border border-slate-800 text-[11px]">
+                    <button class="py-1 font-semibold rounded-md bg-sky-600 text-white transition" id="btnWaterModeGlobal" onclick="setWaterInputMode('global')">
+                        Genel Su Yüksekliği
+                    </button>
+                    <button class="py-1 font-semibold rounded-md text-slate-400 hover:text-white transition" id="btnWaterModeHole" onclick="setWaterInputMode('hole')">
+                        Delik Bazında Tablo
+                    </button>
+                </div>
+
+                <!-- 1. Genel Su Yüksekliği Girişi -->
+                <div class="space-y-1.5" id="boxWaterGlobal">
+                    <div class="flex justify-between text-xs">
+                        <label class="text-slate-300 font-medium">Tüm Delikler İçin Su Yüksekliği (h_su)</label>
+                        <span class="text-sky-400 font-mono font-bold"><span id="lbl_water_h">0.0</span> m</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input class="flex-1" id="rng_water_h" max="15.0" min="0.0" oninput="updateVal('globalWaterH', this.value)" step="0.2" type="range" value="0.0">
+                        <input class="w-20 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono font-bold text-center text-slate-100" id="num_water_h" max="15.0" min="0.0" onchange="updateVal('globalWaterH', this.value)" step="0.2" type="number" value="0.0">
+                    </div>
+                    <div class="flex justify-end gap-1.5 pt-0.5 text-[10px]">
+                        <button class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-0.5 rounded border border-slate-700" onclick="updateVal('globalWaterH', 0)">Kuru (0m)</button>
+                        <button class="bg-slate-800 hover:bg-slate-700 text-sky-300 px-2 py-0.5 rounded border border-sky-500/30" onclick="updateVal('globalWaterH', 2.0)">Hafif Su (2m)</button>
+                        <button class="bg-slate-800 hover:bg-slate-700 text-sky-400 px-2 py-0.5 rounded border border-sky-500/30" onclick="updateVal('globalWaterH', 4.5)">Ağır Su (4.5m)</button>
+                    </div>
+                </div>
+
+                <!-- 2. Delik Bazında Tablo Girişi -->
+                <div class="hidden space-y-2" id="boxWaterTable">
+                    <div class="flex items-center justify-between text-[11px]">
+                        <span class="text-slate-400">Her delik için özel seviye:</span>
+                        <div class="flex gap-1">
+                            <button class="bg-slate-800 hover:bg-slate-700 text-sky-300 px-2 py-0.5 rounded border border-sky-500/40 text-[10px]" onclick="applyBatchWater('all_custom')">Tümüne Yaz</button>
+                            <button class="bg-slate-800 hover:bg-slate-700 text-amber-300 px-2 py-0.5 rounded border border-amber-500/40 text-[10px]" onclick="applyBatchWater('random')">Rastgele</button>
+                            <button class="bg-slate-800 hover:bg-slate-700 text-slate-400 px-2 py-0.5 rounded border border-slate-700 text-[10px]" onclick="applyBatchWater('zero')">Sıfırla</button>
+                        </div>
+                    </div>
+                    <div class="max-h-36 overflow-y-auto pr-1 bg-slate-900/90 rounded-lg p-2 border border-slate-800 grid grid-cols-2 sm:grid-cols-3 gap-1.5" id="holeWaterGridContainer"></div>
+                </div>
+
+                <!-- Su & Patlayıcı Tavsiye ve Strateji -->
+                <div class="p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-xs space-y-1.5" id="boxWaterAdvisory">
+                    <div class="flex items-center justify-between font-bold" id="waterAdvisoryTitle">
+                        <span class="flex items-center gap-1.5 text-emerald-400">☀️ Delikler Kuru / Susuz</span>
+                        <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono">ANFO Uygun</span>
+                    </div>
+                    <p class="text-[11px] leading-relaxed text-slate-300" id="waterAdvisoryDesc">Tüm delikler kuru. Düşük maliyetli ANFO veya Emülsiyon serbestçe tercih edilebilir.</p>
+                    <div class="pt-1 border-t border-slate-800 flex items-center justify-between">
+                        <label class="text-[11px] text-slate-300 font-medium">Sulu Delik Şarj Stratejisi:</label>
+                        <select class="bg-slate-900 border border-slate-700 text-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-brand-500" id="sel_charge_strategy" onchange="onChargeStrategyChange(this.value)">
+                            <option selected="" value="hybrid">Kombine Şarj (Su: Emülsiyon, Kuru: ANFO)</option>
+                            <option value="full_waterproof">Tam Suya Dayanıklı (Sulu Deliklerde Tümü Emülsiyon)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patlayıcı Tipi ve Yoğunluğu -->
+            <div class="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Dip / Sulu Patlayıcı</label>
+                    <select class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs text-slate-100" id="sel_explosive" onchange="onExplosivePreset(this.value)">
+                        <option selected="" value="1.15">Emülsiyon (1.15 g/cm³ - Suya Dayanıklı)</option>
+                        <option value="0.85">ANFO (0.85 g/cm³ - Suya Dayanıksız)</option>
+                        <option value="1.25">Ağır ANFO (1.25 g/cm³)</option>
+                        <option value="1.30">Su Jeli (1.30 g/cm³)</option>
+                        <option value="custom">Özel (elle girilen)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Dip Yoğunluk ρ_e (g/cm³)</label>
+                    <input class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-slate-100" id="num_rho_e" max="2.5" min="0.5" onchange="updateVal('rho_e', this.value)" step="0.01" type="number" value="1.15">
+                </div>
+            </div>
+
+            <p class="text-[10px] text-slate-500 -mt-1">Not: Sulu deliklerde emülsiyon yoğunluğu en az 1.15 g/cm³ alınır.</p>
+            <div class="flex items-center justify-between text-xs">
+                <label class="text-slate-300 font-medium">Kuru Kolon ANFO Yoğunluğu ρ_dry (g/cm³)</label>
+                <input class="w-20 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono font-bold text-center text-slate-100" id="num_rho_dry" max="1.2" min="0.5" onchange="updateVal('rho_dry', this.value)" step="0.01" type="number" value="0.85">
+            </div>
+
+            <!-- Kayaç Yoğunluğu -->
+            <div>
+                <div class="flex justify-between text-xs mb-1">
+                    <label class="text-slate-300 font-medium">Kayaç Yoğunluğu (ρ_r)</label>
+                    <span class="text-sky-400 font-mono font-bold"><span id="lbl_rho_r">2.75</span> t/m³</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input class="flex-1" id="rng_rho_r" max="3.8" min="1.6" oninput="updateVal('rho_r', this.value)" step="0.05" type="range" value="2.75">
+                    <input class="w-20 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs font-mono font-bold text-center text-slate-100" id="num_rho_r" onchange="updateVal('rho_r', this.value)" step="0.05" type="number" value="2.75">
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Saha & Titreşim Parametreleri -->
+        <div class="bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-md space-y-3">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <span class="text-xs font-bold text-white flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                    4. Saha Atımı &amp; Titreşim (PPV)
+                </span>
+                <span class="text-[11px] text-slate-400 font-mono">N, R, M</span>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Toplam Delik (N)</label>
+                    <input class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-slate-100" id="num_N" max="500" min="1" onchange="updateVal('N', this.value)" type="number" value="24">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Sıra Sayısı</label>
+                    <input class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-slate-100" id="num_rows" max="20" min="1" onchange="updateVal('rows', this.value)" type="number" value="4">
+                    <span class="text-[10px] text-slate-500 block mt-0.5" id="lbl_rows_info"></span>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 pt-1 border-t border-slate-800">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Mesafe R (m)</label>
+                    <input class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-slate-100" id="num_R" min="10" onchange="updateVal('R', this.value)" step="10" type="number" value="350">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1">Gecikme Başı Şarj M (kg)</label>
+                    <input class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-slate-100" id="num_M" min="1" onchange="updateVal('M', this.value)" step="1" type="number" value="120">
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ================= SAĞ PANEL: HESAPLAMALAR, GRAFİKLER & RAPORLAR ================= -->
+    <main class="lg:col-span-7 xl:col-span-8 space-y-4">
+        <!-- ÜST KPI ŞERİDİ (4'lü Kart) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="bg-slate-900 p-3.5 rounded-2xl border border-brand-500/30">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Toplam Patlayıcı</span>
+                <span class="text-xl sm:text-2xl font-black text-brand-400 font-mono mt-0.5 block" id="kpi_total_explosive">0 kg</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5" id="kpi_per_hole_explosive">0.00 kg / delik</span>
+            </div>
+            <div class="bg-slate-900 p-3.5 rounded-2xl border border-amber-500/30">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Özgül Şarj (Pf)</span>
+                <span class="text-xl sm:text-2xl font-black text-amber-400 font-mono mt-0.5 block" id="kpi_pf">0.000 kg/m³</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5" id="kpi_pf_ton">0.000 kg/ton</span>
+            </div>
+            <div class="bg-slate-900 p-3.5 rounded-2xl border border-sky-500/30">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Toplam Söküm</span>
+                <span class="text-xl sm:text-2xl font-black text-sky-400 font-mono mt-0.5 block" id="kpi_volume">0 m³</span>
+                <span class="text-[10px] text-slate-400 block mt-0.5" id="kpi_tonnage">0 Ton</span>
+            </div>
+            <div class="bg-slate-900 p-3.5 rounded-2xl border border-purple-500/30">
+                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tahmini PPV</span>
+                <span class="text-xl sm:text-2xl font-black text-purple-400 font-mono mt-0.5 block" id="kpi_ppv">0.00 mm/s</span>
+                <span class="text-[10px] font-bold text-emerald-400 block mt-0.5" id="kpi_ppv_status">GÜVENLİ (Konut Altı)</span>
+            </div>
+        </div>
+
+        <!-- HİBRİT / SU DURUMU ÖZEL KART STRİPİ -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="p-3 bg-slate-900 rounded-2xl border border-sky-500/30 flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Sulu Delik Sayısı</span>
+                    <span class="text-lg font-black font-mono text-sky-400 mt-0.5 block" id="kpi_water_holes">0 / 24</span>
+                </div>
+                <span class="text-2xl">💧</span>
+            </div>
+            <div class="p-3 bg-slate-900 rounded-2xl border border-sky-500/30 flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Ort. Su Seviyesi</span>
+                    <span class="text-lg font-black font-mono text-sky-400 mt-0.5 block" id="kpi_water_avg_h">0.00 m</span>
+                </div>
+                <span class="text-2xl">📏</span>
+            </div>
+            <div class="p-3 bg-slate-900 rounded-2xl border border-emerald-500/30 flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Su Altı (Emülsiyon)</span>
+                    <span class="text-lg font-black font-mono text-emerald-400 mt-0.5 block" id="kpi_emulsion_total">0 kg</span>
+                </div>
+                <span class="text-2xl">🛡️</span>
+            </div>
+            <div class="p-3 bg-slate-900 rounded-2xl border border-amber-500/30 flex items-center justify-between">
+                <div>
+                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Kuru Şarj (ANFO)</span>
+                    <span class="text-lg font-black font-mono text-amber-400 mt-0.5 block" id="kpi_anfo_total">0 kg</span>
+                </div>
+                <span class="text-2xl">⚡</span>
+            </div>
+        </div>
+
+        <!-- SEKMELER (TABS) -->
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-2 p-2.5 bg-slate-800/90 rounded-2xl border border-slate-700 shadow-md">
+            <button class="tab-btn px-3 py-2.5 rounded-xl transition text-xs sm:text-sm font-semibold bg-slate-900/80 text-slate-200 hover:bg-slate-700/80 hover:text-white border border-slate-700/60 flex items-center justify-center gap-1.5 active" id="tabBtn_calc" onclick="switchTab('tab_calc')">
+                <span>📊</span> <span>Mühendislik Matrisi</span>
+            </button>
+            <button class="tab-btn px-3 py-2.5 rounded-xl transition text-xs sm:text-sm font-semibold bg-slate-900/80 text-slate-200 hover:bg-slate-700/80 hover:text-white border border-slate-700/60 flex items-center justify-center gap-1.5" id="tabBtn_order" onclick="switchTab('tab_order')">
+                <span>📋</span> <span>Sipariş Formu</span>
+            </button>
+            <button class="tab-btn px-3 py-2.5 rounded-xl transition text-xs sm:text-sm font-semibold bg-slate-900/80 text-slate-200 hover:bg-slate-700/80 hover:text-white border border-slate-700/60 flex items-center justify-center gap-1.5" id="tabBtn_sdob" onclick="switchTab('tab_sdob')">
+                <span>🎯</span> <span>SDOB &amp; İbre</span>
+            </button>
+            <button class="tab-btn px-3 py-2.5 rounded-xl transition text-xs sm:text-sm font-semibold bg-slate-900/80 text-slate-200 hover:bg-slate-700/80 hover:text-white border border-slate-700/60 flex items-center justify-center gap-1.5" id="tabBtn_graphics" onclick="switchTab('tab_graphics')">
+                <span>📐</span> <span>2D Basamak Kesiti</span>
+            </button>
+            <button class="tab-btn col-span-2 lg:col-span-1 px-3 py-2.5 rounded-xl transition text-xs sm:text-sm font-semibold bg-slate-900/80 text-slate-200 hover:bg-slate-700/80 hover:text-white border border-slate-700/60 flex items-center justify-center gap-1.5" id="tabBtn_vibration" onclick="switchTab('tab_vibration')">
+                <span>⚡</span> <span>Titreşim (PPV)</span>
+            </button>
+        </div>
+
+        <!-- TAB 1: DETAYLI HESAPLAMALAR MATRİSİ -->
+        <div class="tab-panel space-y-4" id="tab_calc">
+            <div class="bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-md">
+                <div class="flex flex-wrap justify-between items-center gap-2 border-b border-slate-800 pb-3 mb-3">
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Mühendislik Hesaplama Matrisi</h3>
+                        <p class="text-xs text-slate-400">Tüm parametreler eğimli delik geometrisi, su seviyesi ve kombine şarj ile hesaplanır.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[11px] font-mono text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded-full border border-sky-500/20" id="res_water_badge">
+                            Su Analizi Aktif ✓
+                        </span>
+                        <span class="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20" id="res_incl_badge">
+                            Eğim Düzeltmesi Aktif ✓
+                        </span>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Geometri & Delgi Metrajı -->
+                    <div class="space-y-2">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">📏 Geometri &amp; Delgi Metrajı</h4>
+                        <table class="calc-table w-full text-xs">
+                            <tbody class="divide-y divide-slate-800">
+                                <tr>
+                                    <td class="text-slate-400">Dikey Delik Boyu</td>
+                                    <td class="font-mono font-bold text-slate-200" id="res_L_vert">0.00 m</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-semibold text-brand-400">Gerçek Eğimli Boy</td>
+                                    <td class="font-mono font-bold text-brand-400" id="res_L_real">0.00 m</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-slate-400">Sıkılama Boyu</td>
+                                    <td class="font-mono font-bold text-amber-400" id="res_T">0.00 m</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-slate-400">Net Şarj Boyu</td>
+                                    <td class="font-mono font-bold text-amber-300" id="res_Lc">0.00 m</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-slate-400">Ortalama Eksenel Su Boyu</td>
+                                    <td class="font-mono font-bold text-sky-400" id="res_L_water">0.00 m</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-slate-400">Toplam Delgi Metrajı</td>
+                                    <td class="font-mono font-bold text-purple-400" id="res_total_drill">0 m</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-slate-400"><span>🛡️</span> Flyrock Emniyeti (Personel - Lundborg)</td>
+                                    <td class="font-mono font-bold text-amber-400" id="res_flyrock_personnel">~0 m</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-slate-400"><span>🚜</span> Flyrock Emniyeti (Ekipman - McKenzie)</td>
+                                    <td class="font-mono font-bold text-sky-400" id="res_flyrock_equipment">~0 m</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Patlayıcı & Hibrit Dağılım Analizi -->
+                    <div class="space-y-2">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">💥 Patlayıcı &amp; Şarj Dağılımı</h4>
+                        <table class="calc-table w-full text-xs">
+                            <tbody class="divide-y divide-slate-800">
+                                <tr>
+                                    <td class="text-slate-400">Emülsiyon Kolon Şarjı</td>
+                                    <td class="font-mono font-bold text-slate-200" id="res_ql">0.00 kg/m</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-slate-400">ANFO Kuru Kolon Şarjı</td>
+                                    <td class="font-mono font-bold text-amber-300" id="res_ql_dry">0.00 kg/m</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-sky-300">Toplam Emülsiyon Şarjı (Sulu Kolon)</td>
+                                    <td class="font-mono font-bold text-sky-400" id="res_total_emulsion_tab">0 kg</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-amber-300">Toplam ANFO Şarjı (Kuru Kolon)</td>
+                                    <td class="font-mono font-bold text-amber-300" id="res_total_anfo_tab">0 kg</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-slate-400">Toplam Booster / Primer</td>
+                                    <td class="font-mono font-bold text-amber-300" id="res_total_booster">0 kg</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-semibold text-brand-400">Ortalama Delik Başı Toplam Şarj</td>
+                                    <td class="font-mono font-bold text-brand-400" id="res_Q">0.00 kg</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-slate-400">Delik Başı Hacim</td>
+                                    <td class="font-mono font-bold text-sky-400" id="res_Vh">0.0 m³</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="mt-4 p-3 bg-slate-950/80 rounded-xl border border-slate-800 text-xs space-y-1">
+                    <div class="flex items-center gap-1.5 font-bold text-sky-400">
+                        <span>💧</span> Hidrojeolojik Şarj ve Güvenlik Raporu:
+                    </div>
+                    <p class="text-slate-300 leading-relaxed">
+                        Delikte su tespit edildiğinde standart ANFO patlayıcı erir ve ateşleme boğulmasına (misfire) sebep olur. Su derinliği olan taban kısmına suya tam dayanıklı emülsiyon, üst kuru kolona ise optimum maliyet için kombine ANFO şarjı atanır.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB: SİPARİŞ FORMU -->
+        <div class="tab-panel space-y-4 hidden" id="tab_order">
+            <div class="bg-slate-900 rounded-2xl p-4 lg:p-6 border border-slate-800 shadow-md space-y-4">
+                <!-- İşlem Araç Çubuğu -->
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                    <div>
+                        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+                            <span>📋</span> Patlatma Malzemeleri Sipariş &amp; Sevkiyat Formu
+                        </h3>
+                        <p class="text-xs text-slate-400">Tüm kalemler düzenlenebilir. A4 PDF çıktısı için optimize edilmiştir.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-brand-400 border border-brand-500/30 text-xs font-semibold flex items-center gap-1.5 transition" onclick="refreshOrderFromCalculations()" id="btnRefreshOrderFromCalc">
+                            <span>🔄 Miktarları Hesaplamadan Güncelle</span>
+                        </button>
+                        <button class="px-3 py-1.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-slate-950 text-xs font-bold flex items-center gap-1.5 transition shadow" onclick="saveOrderForm()">
+                            <span>💾 Kaydet</span>
+                        </button>
+                        <button class="px-3 py-1.5 rounded-xl bg-accent-600 hover:bg-accent-500 text-white text-xs font-bold flex items-center gap-1.5 transition shadow" onclick="triggerOrderPrintConfirm()">
+                            <span>🖨️ PDF Olarak Kaydet</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- YAZDIRILABİLİR ALAN (Print Area) -->
+                <div class="p-4 sm:p-6 bg-white rounded-xl border border-slate-300 text-slate-900 shadow-inner">
+                    <!-- Üst Bilgi Kartı (Şirket, Proje, Tasarımcı, Tarih) -->
+                    <div class="border-2 border-black rounded-lg p-3 sm:p-4 mb-4 bg-white">
+                        <div class="text-center pb-2 mb-3 border-b border-black">
+                            <h2 class="text-base font-black tracking-wide text-black uppercase">PATLATMA MALZEMELERİ TALEP VE SİPARİŞ FORMU</h2>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                            <div>
+                                <label class="block font-bold text-neutral-800 text-[11px] mb-1">Şirket Adı:</label>
+                                <input class="w-full border border-black bg-white rounded px-2 py-1 text-xs font-medium text-black" id="ord_company" oninput="orderData.company=this.value" placeholder="Şirket Adı..." type="text" value="">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-neutral-800 text-[11px] mb-1">Proje Adı:</label>
+                                <input class="w-full border border-black bg-white rounded px-2 py-1 text-xs font-medium text-black" id="ord_project" oninput="orderData.project=this.value; document.getElementById('metaProjName').value=this.value" placeholder="Proje Adı..." type="text" value="">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-neutral-800 text-[11px] mb-1">Tasarımcı Adı:</label>
+                                <input class="w-full border border-black bg-white rounded px-2 py-1 text-xs font-medium text-black" id="ord_designer" oninput="orderData.designer=this.value; updateDesignerDisplay()" placeholder="Tasarımcı / Mühendis..." type="text" value="">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-neutral-800 text-[11px] mb-1">Tarih:</label>
+                                <input class="w-full border border-black bg-white rounded px-2 py-1 text-xs font-medium text-black" id="ord_date" oninput="orderData.date=this.value" type="date" value="">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tablo Alanı -->
+                    <div class="overflow-x-auto">
+                        <table class="order-sheet-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">Sıra No</th>
+                                    <th>Uygulama Adı / Cinsi</th>
+                                    <th style="width: 110px;">Uzunluk (m)</th>
+                                    <th style="width: 120px;">Miktar</th>
+                                    <th style="width: 80px;">Birim</th>
+                                    <th class="order-no-print" style="width: 80px;">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orderTableBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="mt-3 flex flex-wrap justify-between items-center gap-2 order-no-print" id="orderTableTotalsSummary">
+                        <button class="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold flex items-center gap-1 transition border border-black" onclick="addNonelCapsuleRow()">
+                            <span>+ Kapsül Satırı Ekle (6m - 25m)</span>
+                        </button>
+                        <span class="text-[11px] text-neutral-500 italic">* Kapsül uzunluklarını 6m ile 25m aralığında seçebilirsiniz.</span>
+                    </div>
+
+                    <div class="mt-5 pt-3 border-t border-black grid grid-cols-2 text-[11px] text-neutral-700 text-center">
+                        <div>
+                            <strong>Hazırlayan (Patlatma Mühendisi)</strong><br>
+                            <span class="font-bold text-black text-xs block mt-1" id="ord_disp_designer">-</span>
+                            <span class="inline-block mt-3 text-neutral-500">İmza / Kaşe</span>
+                        </div>
+                        <div>
+                            <strong>Onaylayan (Saha Müdürü)</strong><br>
+                            <span class="font-bold text-black text-xs block mt-1">Maden İşletme Başmühendisi</span>
+                            <span class="inline-block mt-3 text-neutral-500">İmza / Kaşe</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: SDOB & FIRLATMA RİSKİ GAUGE -->
+        <div class="tab-panel space-y-4 hidden" id="tab_sdob">
+            <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-md">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3 mb-4">
+                    <h3 class="text-sm font-bold text-white">🎯 Sıkılama / Yük Mesafesi (SDOB / T/B) Analizi</h3>
+                    <span class="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30" id="sdobRiskBadge">Optimum Aralık ✓</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="text-center mb-2">
+                        <span class="text-4xl font-black font-mono text-brand-400" id="sdobMainVal">0.83</span>
+                        <span class="text-xs text-slate-400 block mt-1">Oran: T / B | Delik Eğimi: <span class="text-purple-400 font-bold" id="sdobThetaVal">15°</span></span>
+                    </div>
+                    <div class="w-full max-w-md">
+                        <svg class="w-full" viewBox="0 0 300 170">
+                            <!-- Dilimler -->
+                            <path d="M 150 140 L 30 140 A 120 120 0 0 1 52.9 69.5 Z" fill="#ef4444" opacity="0.85"></path>
+                            <path d="M 150 140 L 52.9 69.5 A 120 120 0 0 1 73.5 47.5 Z" fill="#f97316" opacity="0.85"></path>
+                            <path d="M 150 140 L 73.5 47.5 A 120 120 0 0 1 112.9 25.9 Z" fill="#eab308" opacity="0.85"></path>
+                            <path d="M 150 140 L 112.9 25.9 A 120 120 0 0 1 187.1 25.9 Z" fill="#10b981" opacity="0.95"></path>
+                            <path d="M 150 140 L 187.1 25.9 A 120 120 0 0 1 247.1 69.5 Z" fill="#06b6d4" opacity="0.85"></path>
+                            <path d="M 150 140 L 247.1 69.5 A 120 120 0 0 1 270 140 Z" fill="#8b5cf6" opacity="0.85"></path>
+                            <!-- Needle -->
+                            <g class="transition-transform duration-500 ease-out" id="sdobNeedle" transform="rotate(-30, 150, 140)">
+                                <line stroke="#ffffff" stroke-linecap="round" stroke-width="3" x1="150" x2="150" y1="140" y2="35"></line>
+                                <polygon fill="#ffffff" points="150,26 144,40 156,40"></polygon>
+                            </g>
+                            <circle cx="150" cy="140" fill="#0f172a" r="10" stroke="#ffffff" stroke-width="2"></circle>
+                            <circle cx="150" cy="140" fill="#10b981" r="4"></circle>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: 2D KESİT (GRUP BAZLI) & 3D GÖRÜNÜM -->
+        <div class="tab-panel space-y-4 hidden" id="tab_graphics">
+            <div class="bg-slate-900 rounded-2xl p-4 border border-slate-800 shadow-md space-y-3">
+                <div class="flex flex-wrap justify-between items-center gap-2">
+                    <span class="text-xs font-bold text-white">📐 Basamak Kesiti &amp; Şarj Profili</span>
+                    <div class="flex gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                        <button class="seg-btn active" id="btnView2d" onclick="setGfxView('2d')">2D Kesit (Gruplar)</button>
+                        <button class="seg-btn" id="btnView3d" onclick="setGfxView('3d')">3D Görünüm</button>
+                    </div>
+                </div>
+
+                <div id="panel2d">
+                    <div class="grid grid-cols-1 gap-3" id="profileList"></div>
+                </div>
+
+                <div class="hidden space-y-2" id="panel3d">
+                    <div class="flex flex-wrap items-center gap-2 text-[11px]">
+                        <button class="seg-btn bg-slate-800" onclick="setView3D('iso')">İzometrik</button>
+                        <button class="seg-btn bg-slate-800" onclick="setView3D('top')">Üstten</button>
+                        <button class="seg-btn bg-slate-800" onclick="setView3D('front')">Önden</button>
+                        <button class="seg-btn bg-slate-800" onclick="setView3D('side')">Yandan</button>
+                        <button class="seg-btn bg-slate-800" onclick="resetView3D()">Sıfırla</button>
+                        <label class="flex items-center gap-1.5 text-slate-300 ml-auto cursor-pointer"><input id="chk3dAuto" onchange="setAutoRotate(this.checked)" type="checkbox"> Otomatik döndür</label>
+                    </div>
+                    <div class="w-full bg-slate-950 rounded-xl overflow-hidden border border-slate-800">
+                        <canvas class="w-full" height="560" id="canvas3d" style="touch-action:none;cursor:grab" width="960"></canvas>
+                    </div>
+                    <p class="text-[10px] text-slate-500">Sürükle: döndür • Tekerlek: yakınlaştır • Çift tıkla: sıfırla. Her blok bir deliğin B×S alanını ve kendi basamak yüksekliğini gösterir.</p>
+                </div>
+
+                <div class="flex flex-wrap gap-3 text-[11px] text-slate-300">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-amber-500 inline-block"></span> Sıkılama (T)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-yellow-400 inline-block"></span> Kuru Kolon (ANFO)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-emerald-500 inline-block"></span> Dip Şarj (Emülsiyon)</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-sky-400 inline-block"></span> Su Seviyesi</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: TITREŞİM VE PPV ANALİZİ -->
+        <div class="tab-panel hidden space-y-4" id="tab_vibration">
+            <div class="bg-slate-900 rounded-2xl p-5 border border-slate-800 shadow-md space-y-4">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                    <h3 class="text-sm font-bold text-white">⚡ Zemin Titreşimi (PPV) &amp; USBM Sönüm Modeli</h3>
+                    <span class="text-xs font-mono text-purple-400 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/30">USBM RI 8507</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 uppercase font-bold">Ölçeklenmiş Mesafe (SD)</span>
+                        <div class="text-xl font-black font-mono text-slate-100 mt-1" id="vib_SD">0.00 m/√kg</div>
+                    </div>
+                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 uppercase font-bold">Hesaplanan Titreşim</span>
+                        <div class="text-xl font-black font-mono text-purple-400 mt-1" id="vib_PPV_val">0.00 mm/s</div>
+                    </div>
+                    <div class="p-3 bg-slate-950 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 uppercase font-bold">Mevzuat Uyumu</span>
+                        <div class="text-xl font-black font-mono text-emerald-400 mt-1" id="vib_Status">GÜVENLİ ✓</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Saha Sabiti K</label>
+                        <input class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-slate-100" id="num_K_vib" min="1" onchange="updateVal('K_vib', this.value)" step="10" type="number" value="180">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1">Sönüm Üssü β</label>
+                        <input class="w-full bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold text-slate-100" id="num_e_vib" min="0.5" max="3" onchange="updateVal('e_vib', this.value)" step="0.1" type="number" value="1.6">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dışa Aktarma & Rapor Butonları -->
+        <div class="bg-slate-900 rounded-2xl p-4 border border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+                <button class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200" onclick="exportDetailedHoleCSV()">📊 CSV İndir</button>
+                <button class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200" onclick="exportJSON()">⚙️ JSON İndir</button>
+            </div>
+            <div class="text-[11px] text-slate-400">Saha denetimleri ve kuyu patlatma kütükleri için hazır format.</div>
+        </div>
+    </main>
+</div>
+
+<!-- MÜHENDİSLİK RAPOR MODALI -->
+<div class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 overflow-y-auto hidden p-4 items-center justify-center" id="reportModal">
+    <div class="bg-white text-slate-900 rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl border border-slate-200 my-auto" id="reportPrintable">
+        <div class="flex justify-between items-start border-b pb-3">
+            <div>
+                <h2 class="text-lg font-black text-slate-900">📋 Açık Ocak Patlatma Tasarım Raporu</h2>
+                <p class="text-xs text-slate-500">BlastMaster Pro - Su Seviyesi &amp; Kombine Şarj Raporu</p>
+            </div>
+            <button class="order-no-print text-slate-400 hover:text-slate-700 text-xl font-bold p-1" onclick="closeReportModal()">✕</button>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div><strong>Proje:</strong> <span id="rpt_proj">-</span></div>
+            <div><strong>Tarih:</strong> <span id="rpt_date">-</span></div>
+            <div><strong>Kayaç Cinsi:</strong> <span id="rpt_rock">-</span></div>
+            <div><strong>Delik Sayısı:</strong> <span id="rpt_holes">-</span></div>
+            <div><strong>Sıra Sayısı:</strong> <span id="rpt_rows">-</span></div>
+            <div class="col-span-2"><strong>Basamak Yüksekliği (H):</strong> <span id="rpt_H">-</span></div>
+        </div>
+        <div class="border border-sky-200 bg-sky-50 text-sky-950 rounded-xl p-3 space-y-1.5 text-xs">
+            <h4 class="font-bold text-sky-900 border-b border-sky-200 pb-1">💧 Su ve Patlayıcı Şarj Kompozisyonu</h4>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1">
+                <div>Sulu Delik Sayısı: <strong id="rpt_water_holes">--</strong></div>
+                <div>Ortalama Su Kolonu: <strong id="rpt_water_h">--</strong></div>
+                <div>Su Altı Emülsiyon: <strong id="rpt_water_exp">--</strong></div>
+                <div>Üst Kuru ANFO: <strong id="rpt_dry_exp">--</strong></div>
+                <div>Toplam Booster: <strong id="rpt_booster">--</strong></div>
+            </div>
+        </div>
+        <div class="order-no-print flex gap-2 pt-2">
+            <button class="flex-1 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs" onclick="printReport()">🖨️ Yazdır / PDF Kaydet</button>
+            <button class="px-5 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs" onclick="closeReportModal()">Kapat</button>
+        </div>
+    </div>
+</div>
+
+<!-- SİPARİŞ FORMU ONAY MODALI -->
+<div class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 overflow-y-auto hidden p-3 sm:p-6 justify-center items-start" id="orderPrintModal">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-4xl shadow-2xl flex flex-col overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-3.5 bg-slate-800/90 border-b border-slate-700/80 order-no-print">
+            <div>
+                <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2"><span>📄</span> A4 Baskı &amp; PDF Önizleme</h3>
+                <p class="text-xs text-slate-400">A4 Portrait (210mm × 297mm) standart teknik patlatma sipariş föyü</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button class="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md transition" onclick="confirmOrderPrint()">
+                    <span>🖨️</span> Yazdır / PDF Kaydet
+                </button>
+                <button class="px-3 py-2 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold text-xs transition" onclick="closeOrderPrintModal()">
+                    Kapat ✕
+                </button>
+            </div>
+        </div>
+        <div class="p-4 sm:p-6 bg-slate-950/60 overflow-y-auto max-h-[82vh] flex justify-center items-start">
+            <div class="w-full max-w-[760px] bg-white text-black p-6 sm:p-8 shadow-2xl rounded-sm border border-slate-300 font-sans text-xs flex flex-col justify-start space-y-4" id="printableA4Document">
+                <div>
+                    <div class="border-b-2 border-black pb-2.5 mb-3">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-lg bg-black text-white flex items-center justify-center font-black text-base">⚡</div>
+                                <div>
+                                    <h1 class="text-lg font-black tracking-wider uppercase text-black">BLASTMASTER PRO</h1>
+                                    <span class="text-[9px] font-bold text-neutral-600 tracking-wider uppercase block">Açık Ocak Patlatma Tasarımı &amp; Analiz Süiti</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs font-black uppercase tracking-wide block">TEKNİK TALEP VE SEVKİYAT FORMU</span>
+                                <span class="text-[10px] text-neutral-600 font-mono">DOK. NO: BM-2026-05/S01</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-2.5 bg-slate-50 border border-black rounded mb-3 text-xs">
+                        <div class="border-r border-slate-300 pr-2">
+                            <span class="text-[9px] uppercase font-bold text-neutral-500 block">Şirket Adı</span>
+                            <span class="font-black text-black text-xs block truncate" id="previewCompany">-</span>
+                        </div>
+                        <div class="border-r border-slate-300 pr-2">
+                            <span class="text-[9px] uppercase font-bold text-neutral-500 block">Proje / Ocak</span>
+                            <span class="font-black text-black text-xs block truncate" id="previewProject">-</span>
+                        </div>
+                        <div class="border-r border-slate-300 pr-2">
+                            <span class="text-[9px] uppercase font-bold text-neutral-500 block">Tasarımcı Mühendis</span>
+                            <span class="font-black text-black text-xs block truncate" id="previewDesigner">-</span>
+                        </div>
+                        <div>
+                            <span class="text-[9px] uppercase font-bold text-neutral-500 block">Tarih / Saat</span>
+                            <span class="font-black text-black text-xs font-mono block" id="previewDate">-</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <h4 class="text-[11px] font-black uppercase text-black mb-1.5 flex items-center gap-1.5">
+                            <span class="w-2 h-2 bg-black inline-block"></span> Malzeme Talep &amp; Sipariş Çizelgesi
+                        </h4>
+                        <table class="order-sheet-table w-full">
+                            <thead>
+                                <tr>
+                                    <th style="width: 45px;">Sıra</th>
+                                    <th>Malzeme Cinsi &amp; Tanımı</th>
+                                    <th style="width: 95px;">Uzunluk (m)</th>
+                                    <th style="width: 100px;">Miktar</th>
+                                    <th style="width: 70px;">Birim</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewOrderTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div class="p-2.5 bg-slate-50 border border-neutral-300 rounded">
+                        <h4 class="text-[10px] font-black uppercase text-neutral-800 mb-1 flex items-center gap-1">
+                            <span>📐</span> Tasarım ve Güvenlik Parametreleri Özeti
+                        </h4>
+                        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 text-[10px]">
+                            <div class="bg-white p-1 rounded border border-neutral-200"><span class="text-neutral-500 block">Delik Sayısı (N):</span><strong class="font-mono text-black" id="prev_N">-</strong></div>
+                            <div class="bg-white p-1 rounded border border-neutral-200"><span class="text-neutral-500 block">Çap (D):</span><strong class="font-mono text-black" id="prev_D">-</strong></div>
+                            <div class="bg-white p-1 rounded border border-neutral-200"><span class="text-neutral-500 block">Basamak (H):</span><strong class="font-mono text-black" id="prev_H">-</strong></div>
+                            <div class="bg-white p-1 rounded border border-neutral-200"><span class="text-neutral-500 block">Burden × Spacing:</span><strong class="font-mono text-black" id="prev_BS">-</strong></div>
+                            <div class="bg-white p-1 rounded border border-neutral-200"><span class="text-neutral-500 block">Özgül Şarj (Pf):</span><strong class="font-mono text-black" id="prev_Pf">-</strong></div>
+                            <div class="bg-white p-1 rounded border border-neutral-200"><span class="text-neutral-500 block">Tahmini PPV:</span><strong class="font-mono text-emerald-700" id="prev_PPV">-</strong></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pt-3 border-t-2 border-black grid grid-cols-2 text-center text-xs">
+                    <div class="border-r border-slate-300 pr-4">
+                        <p class="font-black uppercase text-black text-[11px]">Hazırlayan (Patlatma Mühendisi)</p>
+                        <p class="text-[10px] text-neutral-600 mt-0.5" id="previewDesignerSign">-</p>
+                        <div class="h-10 border-b border-dashed border-neutral-400 mt-1.5 flex items-center justify-center">
+                            <span class="text-[10px] italic text-neutral-400">İmza / Kaşe</span>
+                        </div>
+                    </div>
+                    <div class="pl-4">
+                        <p class="font-black uppercase text-black text-[11px]">Onaylayan (Saha Müdürü)</p>
+                        <p class="text-[10px] text-neutral-600 mt-0.5">Maden İşletme Başmühendisi</p>
+                        <div class="h-10 border-b border-dashed border-neutral-400 mt-1.5 flex items-center justify-center">
+                            <span class="text-[10px] italic text-neutral-400">İmza / Mühür</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const state = {
+        globalWaterH: 0.0,
+        holeWaters: [],
+        chargeStrategy: 'hybrid',
+        rho_dry: 0.85,
+        D: 89,
+        H: 10.0,
+        B: 3.0,
+        S: 3.5,
+        theta: 15,
+        T: 2.5,
+        J: 0.9,
+        booster: 0.5,
+        rho_e: 1.15,
+        rho_r: 2.75,
+        N: 24,
+        rows: 4,
+        benchGroups: [],
+        R: 350,
+        M: 120,
+        K_vib: 180,
+        e_vib: 1.6,
+        presetName: 'Özel Ayar'
+    };
+
+    let activeTabId = 'tab_calc';
+    let isDarkMode = true;
+
+    let calculatedTotals = {
+        totalExplosive: 0,
+        totalAnfo: 0,
+        totalEmulsion: 0,
+        totalBooster: 0
+    };
+
+    function getWaterHoleChargeRate(diameter) {
+        if (diameter >= 95) return 6.0;
+        if (diameter >= 70) return 4.0;
+        return (Math.PI * Math.pow(diameter, 2) / 4000000) * (state.rho_e * 1000);
+    }
+
+    // ===== Farklı basamak yükseklikleri (gruplar) =====
+    function getHoleHeights() {
+        if (state.benchGroups.length > 0) {
+            const a = [];
+            state.benchGroups.forEach(g => { for (let k = 0; k < g.count; k++) a.push(g.H); });
+            return a;
+        }
+        return Array.from({ length: state.N }, () => state.H);
+    }
+
+    function heightsText() {
+        if (!state.benchGroups.length) return `${state.H.toFixed(1)} m`;
+        return state.benchGroups.map(g => `${g.H.toFixed(1)} m × ${g.count}`).join(' / ');
+    }
+
+    function renderBenchGroups() {
+        const box = document.getElementById('boxBenchGroups');
+        const list = document.getElementById('benchGroupList');
+        if (!box || !list) return;
+        const on = state.benchGroups.length > 0;
+        box.classList.toggle('hidden', !on);
+        if (!on) { list.innerHTML = ''; return; }
+        const inp = 'w-16 bg-slate-900 border border-slate-700 rounded px-1 text-center font-mono font-bold text-slate-100';
+        list.innerHTML = state.benchGroups.map((g, i) => `
+            <div class="flex items-center gap-1.5 bg-slate-950 p-1.5 rounded-lg border border-slate-800 text-[11px]">
+                <span class="font-mono text-slate-400 w-12">Grup ${i + 1}</span>
+                <input type="number" min="3" max="25" step="0.5" value="${g.H}" class="${inp}" onchange="updateBenchGroup(${i}, 'H', this.value)" />
+                <span class="text-slate-500">m ×</span>
+                <input type="number" min="1" max="500" step="1" value="${g.count}" class="${inp}" onchange="updateBenchGroup(${i}, 'count', this.value)" />
+                <span class="text-slate-500">delik</span>
+                <button class="ml-auto text-red-400 hover:text-red-300 font-bold px-1.5" title="Grubu sil" onclick="removeBenchGroup(${i})">✕</button>
+            </div>`).join('');
+    }
+
+    function syncBenchTotals() {
+        const gs = state.benchGroups;
+        if (gs.length) {
+            state.N = gs.reduce((a, g) => a + g.count, 0);
+            state.H = gs.reduce((a, g) => a + g.H * g.count, 0) / state.N;
+            resizeHoleWaters();
+            renderHoleWaterGrid();
+        }
+        renderBenchGroups();
+        updateInputs();
+        calculateAll();
+    }
+
+    function addBenchGroup() {
+        const gs = state.benchGroups;
+        if (state.N >= 500) return;
+        if (!gs.length) gs.push({ H: state.H, count: state.N });
+        const last = gs[gs.length - 1];
+        gs.push({ H: Math.min(25, last.H + 2), count: Math.min(4, 500 - state.N) });
+        syncBenchTotals();
+    }
+
+    function updateBenchGroup(i, key, val) {
+        const g = state.benchGroups[i];
+        if (!g) return;
+        let n = parseFloat(val);
+        if (!isFinite(n)) n = g[key];
+        if (key === 'H') {
+            g.H = Math.min(25, Math.max(3, n));
+            if (state.presetName !== 'Özel Ayar') refreshPresetUI(null);
+        } else {
+            const others = state.N - g.count;
+            g.count = Math.min(500 - others, Math.max(1, Math.round(n)));
+        }
+        syncBenchTotals();
+    }
+
+    function removeBenchGroup(i) {
+        state.benchGroups.splice(i, 1);
+        if (state.benchGroups.length <= 1) { disableBenchGroups(); return; }
+        syncBenchTotals();
+    }
+
+    function disableBenchGroups() {
+        const gs = state.benchGroups;
+        if (gs.length === 1) {
+            state.H = gs[0].H;
+            state.N = gs[0].count;
+        } else if (gs.length > 1) {
+            state.H = Math.min(25, Math.max(3, Math.round(state.H * 2) / 2));
+        }
+        state.benchGroups = [];
+        resizeHoleWaters();
+        renderHoleWaterGrid();
+        renderBenchGroups();
+        updateInputs();
+        calculateAll();
+    }
+
+    function computeBlastMetrics() {
+        const radTheta = (state.theta * Math.PI) / 180;
+        const cosTheta = Math.cos(radTheta) || 1;
+
+        const hHoles = getHoleHeights();
+        const Havg = hHoles.reduce((a, b) => a + b, 0) / (hHoles.length || 1);
+        const L_vert = Havg + state.J;
+        const L_real = L_vert / cosTheta;
+        const Lc_max = Math.max(0, L_real - state.T);
+        let totalDrill = 0;
+
+        const activeEmulsionRho = Math.max(1.15, state.rho_e);
+        const ql_emulsion_geo = (Math.PI * Math.pow(state.D, 2) / 4000000) * (activeEmulsionRho * 1000);
+        const ql_water_rule = getWaterHoleChargeRate(state.D);
+        const ql_dry_anfo = (Math.PI * Math.pow(state.D, 2) / 4000000) * (state.rho_dry * 1000);
+
+        let wetHolesCount = 0;
+        let sumWaterH = 0;
+        let totalEmulsionKg = 0;
+        let totalAnfoKg = 0;
+        const holes = [];
+
+        for (let i = 0; i < state.N; i++) {
+            const hw = state.holeWaters[i] !== undefined ? state.holeWaters[i] : state.globalWaterH;
+            const L_real_i = (hHoles[i] + state.J) / cosTheta;
+            const Lc_i = Math.max(0, L_real_i - state.T);
+            totalDrill += L_real_i;
+            sumWaterH += hw;
+            if (hw > 0.05) wetHolesCount++;
+
+            const L_water = Math.min(Lc_i, hw / cosTheta);
+            const L_dry = Math.max(0, Lc_i - L_water);
+            let emulKg = 0;
+            let anfoKg = 0;
+
+            const isWet = hw > 0.05;
+            if (isWet && state.chargeStrategy === 'full_waterproof') {
+                emulKg = (ql_water_rule * L_water) + (ql_emulsion_geo * L_dry);
+            } else if (isWet) {
+                emulKg = ql_water_rule * L_water;
+                anfoKg = ql_dry_anfo * L_dry;
+            } else {
+                anfoKg = ql_dry_anfo * Lc_i;
+            }
+
+            totalEmulsionKg += emulKg;
+            totalAnfoKg += anfoKg;
+
+            holes.push({
+                index: i + 1,
+                H: hHoles[i],
+                L_real: L_real_i,
+                hw,
+                L_water,
+                L_dry,
+                emulKg,
+                anfoKg
+            });
+        }
+
+        const totalBoosterKg = state.booster * state.N;
+        const totalExplosive = totalEmulsionKg + totalAnfoKg + totalBoosterKg;
+        const avgQe = state.N > 0 ? totalExplosive / state.N : 0;
+        const avgWaterH = state.N > 0 ? sumWaterH / state.N : 0;
+        const avgLwater = Math.min(Lc_max, avgWaterH / cosTheta);
+
+        const Vh = state.B * state.S * Havg;
+        const totalVol = state.B * state.S * hHoles.reduce((a, b) => a + b, 0);
+        const totalTon = totalVol * state.rho_r;
+        const pf = totalVol > 0 ? totalExplosive / totalVol : 0;
+
+        const SD = state.R / Math.sqrt(Math.max(1, state.M));
+        const ppv = state.K_vib * Math.pow(SD, -state.e_vib);
+        const sdob = state.B > 0 ? state.T / state.B : 0;
+
+        const mDiaInch = state.D / 25.4;
+        const flyrockPerson = Math.round(260 * Math.pow(mDiaInch / 4.5, 0.67));
+        const flyrockEquip = Math.round(flyrockPerson * 0.56);
+
+        return {
+            cosTheta,
+            L_vert,
+            L_real,
+            Lc_max,
+            activeEmulsionRho,
+            ql_emulsion_geo,
+            ql_water_rule,
+            ql_dry_anfo,
+            wetHolesCount,
+            sumWaterH,
+            avgWaterH,
+            avgLwater,
+            totalEmulsionKg,
+            totalAnfoKg,
+            totalBoosterKg,
+            totalExplosive,
+            avgQe,
+            Vh,
+            totalVol,
+            totalTon,
+            pf,
+            SD,
+            ppv,
+            sdob,
+            flyrockPerson,
+            flyrockEquip,
+            holes,
+            totalDrill,
+            Havg
+        };
+    }
+
+    function calculateAll() {
+        const m = computeBlastMetrics();
+
+        calculatedTotals.totalExplosive = m.totalExplosive;
+        calculatedTotals.totalAnfo = m.totalAnfoKg;
+        calculatedTotals.totalEmulsion = m.totalEmulsionKg;
+        calculatedTotals.totalBooster = m.totalBoosterKg;
+
+        document.getElementById('kpi_total_explosive').textContent = `${Math.round(m.totalExplosive).toLocaleString('tr-TR')} kg`;
+        document.getElementById('kpi_per_hole_explosive').textContent = `${m.avgQe.toFixed(2)} kg / delik`;
+        document.getElementById('kpi_pf').textContent = `${m.pf.toFixed(3)} kg/m³`;
+        document.getElementById('kpi_pf_ton').textContent = `${(m.pf / state.rho_r).toFixed(3)} kg/ton`;
+        document.getElementById('kpi_volume').textContent = `${Math.round(m.totalVol).toLocaleString('tr-TR')} m³`;
+        document.getElementById('kpi_tonnage').textContent = `${Math.round(m.totalTon).toLocaleString('tr-TR')} Ton`;
+        document.getElementById('kpi_ppv').textContent = `${m.ppv.toFixed(2)} mm/s`;
+
+        const ppvStatusEl = document.getElementById('kpi_ppv_status');
+        const vibStatusEl = document.getElementById('vib_Status');
+        if (m.ppv <= 5.0) {
+            if (ppvStatusEl) {
+                ppvStatusEl.textContent = 'GÜVENLİ (Konut Altı)';
+                ppvStatusEl.className = 'text-[10px] font-bold text-emerald-400 block mt-0.5';
+            }
+            if (vibStatusEl) {
+                vibStatusEl.textContent = 'GÜVENLİ ✓';
+                vibStatusEl.className = 'text-xl font-black font-mono text-emerald-400 mt-1';
+            }
+        } else if (m.ppv <= 12.7) {
+            if (ppvStatusEl) {
+                ppvStatusEl.textContent = 'DİKKAT (Sınır Bölgesi)';
+                ppvStatusEl.className = 'text-[10px] font-bold text-amber-400 block mt-0.5';
+            }
+            if (vibStatusEl) {
+                vibStatusEl.textContent = 'DİKKAT !';
+                vibStatusEl.className = 'text-xl font-black font-mono text-amber-400 mt-1';
+            }
+        } else {
+            if (ppvStatusEl) {
+                ppvStatusEl.textContent = 'RİSKLİ (Limit Üstü)';
+                ppvStatusEl.className = 'text-[10px] font-bold text-red-400 block mt-0.5';
+            }
+            if (vibStatusEl) {
+                vibStatusEl.textContent = 'RİSKLİ ✕';
+                vibStatusEl.className = 'text-xl font-black font-mono text-red-400 mt-1';
+            }
+        }
+
+        document.getElementById('kpi_water_holes').textContent = `${m.wetHolesCount} / ${state.N}`;
+        document.getElementById('kpi_water_avg_h').textContent = `${m.avgWaterH.toFixed(2)} m`;
+        document.getElementById('kpi_emulsion_total').textContent = `${Math.round(m.totalEmulsionKg).toLocaleString('tr-TR')} kg`;
+        document.getElementById('kpi_anfo_total').textContent = `${Math.round(m.totalAnfoKg).toLocaleString('tr-TR')} kg`;
+        document.getElementById('badgeWaterSummary').textContent = `${m.wetHolesCount}/${state.N} Delik Sulu (${m.avgWaterH.toFixed(1)}m)`;
+
+        const advisoryTitle = document.getElementById('waterAdvisoryTitle');
+        const advisoryDesc = document.getElementById('waterAdvisoryDesc');
+        const advisoryBox = document.getElementById('boxWaterAdvisory');
+
+        if (m.wetHolesCount > 0) {
+            advisoryBox.className = 'p-2.5 rounded-lg border border-sky-500/40 bg-sky-500/10 text-xs space-y-1.5';
+            advisoryTitle.innerHTML = `
+                <span class="flex items-center gap-1.5 text-sky-400">💧 Su Mevcut (${m.wetHolesCount} Delik)</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/40 font-mono font-bold">Suya Dayanıklı Emülsiyon Şart</span>
+            `;
+            advisoryDesc.innerHTML = `
+                Kuyularda tespit edilen ortalama <strong>${m.avgWaterH.toFixed(1)}m</strong> su seviyesi için ANFO boğulmasını önlemek amacıyla dip şarja suya dayanıklı <strong>Emülsiyon (${m.activeEmulsionRho.toFixed(2)} g/cm³)</strong> uygulanmıştır. Üst kuru kısımda kombine şarj hesaplanmaktadır.
+            `;
+        } else {
+            advisoryBox.className = 'p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 text-xs space-y-1.5';
+            advisoryTitle.innerHTML = `
+                <span class="flex items-center gap-1.5 text-emerald-400">☀️ Delikler Kuru / Susuz</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-mono">ANFO Uygun</span>
+            `;
+            advisoryDesc.innerHTML = `Tüm delikler kuru. Düşük maliyetli ANFO veya Emülsiyon serbestçe tercih edilebilir.`;
+        }
+
+        const totalWaterColumnMetres = m.sumWaterH / m.cosTheta;
+        const effectiveEmulsionLinear = totalWaterColumnMetres > 0
+            ? (m.totalEmulsionKg / totalWaterColumnMetres)
+            : (m.wetHolesCount > 0 ? m.ql_water_rule : m.ql_emulsion_geo);
+
+        document.getElementById('res_L_vert').textContent = `${m.L_vert.toFixed(2)} m`;
+        document.getElementById('res_L_real').textContent = `${m.L_real.toFixed(2)} m`;
+        document.getElementById('res_T').textContent = `${state.T.toFixed(2)} m`;
+        document.getElementById('res_Lc').textContent = `${m.Lc_max.toFixed(2)} m`;
+        document.getElementById('res_L_water').textContent = `${m.avgLwater.toFixed(2)} m`;
+        document.getElementById('res_total_drill').textContent = `${Math.round(m.totalDrill)} m`;
+        document.getElementById('res_ql').textContent = `${effectiveEmulsionLinear.toFixed(2)} kg/m`;
+        document.getElementById('res_ql_dry').textContent = `${m.ql_dry_anfo.toFixed(2)} kg/m`;
+        document.getElementById('res_total_emulsion_tab').textContent = `${Math.round(m.totalEmulsionKg).toLocaleString('tr-TR')} kg`;
+        document.getElementById('res_total_anfo_tab').textContent = `${Math.round(m.totalAnfoKg).toLocaleString('tr-TR')} kg`;
+        document.getElementById('res_Q').textContent = `${m.avgQe.toFixed(2)} kg`;
+        document.getElementById('res_Vh').textContent = `${m.Vh.toFixed(1)} m³`;
+
+        document.getElementById('res_flyrock_personnel').textContent = `~${m.flyrockPerson} m`;
+        document.getElementById('res_flyrock_equipment').textContent = `~${m.flyrockEquip} m`;
+
+        document.getElementById('sdobMainVal').textContent = m.sdob.toFixed(2);
+        document.getElementById('sdobThetaVal').textContent = `${state.theta}°`;
+        const clampedSdob = Math.max(0, Math.min(2.5, m.sdob));
+        const angle = -90 + (clampedSdob / 2.5) * 180;
+        const needle = document.getElementById('sdobNeedle');
+        if (needle) needle.setAttribute('transform', `rotate(${angle}, 150, 140)`);
+
+        const sdobBadge = document.getElementById('sdobRiskBadge');
+        if (sdobBadge) {
+            if (m.sdob < 0.7) {
+                sdobBadge.textContent = 'Yüksek Fırlatma Riski !';
+                sdobBadge.className = 'text-xs font-bold px-3 py-1 rounded-full bg-red-500/20 text-red-400 border border-red-500/30';
+            } else if (m.sdob <= 1.1) {
+                sdobBadge.textContent = 'Optimum Aralık ✓';
+                sdobBadge.className = 'text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+            } else {
+                sdobBadge.textContent = 'Yüksek Sıkılama / İri Parça';
+                sdobBadge.className = 'text-xs font-bold px-3 py-1 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30';
+            }
+        }
+
+        document.getElementById('vib_SD').textContent = `${m.SD.toFixed(2)} m/√kg`;
+        document.getElementById('vib_PPV_val').textContent = `${m.ppv.toFixed(2)} mm/s`;
+
+        document.getElementById('res_total_booster').textContent = `${m.totalBoosterKg.toFixed(1)} kg`;
+        const rowsEff = Math.max(1, Math.min(state.rows, state.N));
+        document.getElementById('lbl_rows_info').textContent = `≈ ${(state.N / rowsEff).toFixed(1)} delik / sıra`;
+        const wb = document.getElementById('res_water_badge');
+        if (wb) wb.textContent = m.wetHolesCount > 0 ? `Su Analizi Aktif ✓ (${m.wetHolesCount} sulu delik)` : 'Delikler Kuru (su yok)';
+        const ib = document.getElementById('res_incl_badge');
+        if (ib) ib.textContent = state.theta > 0 ? `Eğim Düzeltmesi Aktif ✓ (${state.theta}°)` : 'Düşey Delik (düzeltme yok)';
+
+        if (orderData && Array.isArray(orderData.items)) {
+            refreshAutoQuantities();
+            renderOrderTable();
+        }
+        drawCrossSection();
+    }
+
+    function syncProjectName(val) {
+        orderData.project = val;
+        const ordProj = document.getElementById('ord_project');
+        if (ordProj && ordProj.value !== val) ordProj.value = val;
+    }
+
+    function updateDesignerDisplay() {
+        const el = document.getElementById('ord_disp_designer');
+        if (el) el.textContent = (orderData.designer || '').trim() !== '' ? orderData.designer : '-';
+    }
+
+    function resizeHoleWaters() {
+        const old = state.holeWaters;
+        state.holeWaters = Array.from({ length: state.N }, (_, i) => old[i] !== undefined ? old[i] : state.globalWaterH);
+    }
+
+    function initHoleWaters() {
+        state.holeWaters = new Array(state.N).fill(state.globalWaterH);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        initHoleWaters();
+        renderHoleWaterGrid();
+        updateInputs();
+        calculateAll();
+        initOrderFormState();
+    });
+
+    function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        document.documentElement.classList.toggle('dark', isDarkMode);
+        document.getElementById('themeToggleText').textContent = isDarkMode ? '🌙 Koyu' : '☀️ Açık';
+        drawCrossSection();
+    }
+
+    function switchTab(tabId) {
+        activeTabId = tabId;
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+        const targetPanel = document.getElementById(tabId);
+        if (targetPanel) targetPanel.classList.remove('hidden');
+
+        const activeBtn = document.getElementById(`tabBtn_${tabId.replace('tab_', '')}`);
+        if (activeBtn) activeBtn.classList.add('active');
+
+        if (tabId === 'tab_graphics') drawCrossSection();
+    }
+
+    function setWaterInputMode(mode) {
+        const btnGlobal = document.getElementById('btnWaterModeGlobal');
+        const btnHole = document.getElementById('btnWaterModeHole');
+        const boxGlobal = document.getElementById('boxWaterGlobal');
+        const boxTable = document.getElementById('boxWaterTable');
+
+        if (mode === 'global') {
+            btnGlobal.className = 'py-1 font-semibold rounded-md bg-sky-600 text-white transition';
+            btnHole.className = 'py-1 font-semibold rounded-md text-slate-400 hover:text-white transition';
+            boxGlobal.classList.remove('hidden');
+            boxTable.classList.add('hidden');
+            state.holeWaters.fill(state.globalWaterH);
+        } else {
+            btnHole.className = 'py-1 font-semibold rounded-md bg-sky-600 text-white transition';
+            btnGlobal.className = 'py-1 font-semibold rounded-md text-slate-400 hover:text-white transition';
+            boxTable.classList.remove('hidden');
+            boxGlobal.classList.add('hidden');
+            renderHoleWaterGrid();
+        }
+        calculateAll();
+    }
+
+    function onChargeStrategyChange(val) {
+        state.chargeStrategy = val;
+        calculateAll();
+    }
+
+    function renderHoleWaterGrid() {
+        const container = document.getElementById('holeWaterGridContainer');
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (state.holeWaters.length !== state.N) {
+            state.holeWaters = new Array(state.N).fill(state.globalWaterH);
+        }
+
+        for (let i = 0; i < state.N; i++) {
+            const val = state.holeWaters[i] !== undefined ? state.holeWaters[i] : state.globalWaterH;
+            const div = document.createElement('div');
+            div.className = 'flex items-center justify-between bg-slate-950 p-1.5 rounded-lg border border-slate-800 text-[11px]';
+            div.innerHTML = `
+                <span class="font-mono text-slate-400 text-[10px]">#${i + 1}</span>
+                <div class="flex items-center gap-1">
+                    <input type="number" min="0" max="15" step="0.2" value="${val.toFixed(1)}"
+                        class="w-14 bg-slate-900 border border-slate-700 rounded px-1 text-center font-mono font-bold text-sky-300"
+                        onchange="onHoleWaterChange(${i}, this.value)" />
+                    <span class="text-[9px] text-slate-500">m</span>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+    }
+
+    function onHoleWaterChange(idx, val) {
+        state.holeWaters[idx] = Math.max(0, parseFloat(val) || 0);
+        calculateAll();
+    }
+
+    function applyBatchWater(type) {
+        if (type === 'zero') {
+            state.holeWaters.fill(0);
+            state.globalWaterH = 0;
+        } else if (type === 'all_custom') {
+            const val = prompt("Tüm deliklere uygulanacak su yüksekliği (m):", state.globalWaterH || 2.5);
+            if (val !== null) {
+                const parsed = Math.max(0, parseFloat(val) || 0);
+                state.globalWaterH = parsed;
+                state.holeWaters.fill(parsed);
+            }
+        } else if (type === 'random') {
+            for (let i = 0; i < state.N; i++) {
+                state.holeWaters[i] = Math.random() < 0.3 ? 0 : +(1.5 + Math.random() * 3.5).toFixed(1);
+            }
+        }
+        renderHoleWaterGrid();
+        calculateAll();
+    }
+
+    function refreshPresetUI(key) {
+        if (!key) state.presetName = 'Özel Ayar';
+        const badge = document.getElementById('badgeCurrentPreset');
+        if (badge) badge.textContent = state.presetName;
+        document.querySelectorAll('[data-preset]').forEach(b => {
+            const on = b.dataset.preset === key;
+            b.classList.toggle('border-brand-500/50', on);
+            b.classList.toggle('border-slate-700', !on);
+        });
+    }
+
+    function applyRockPreset(type) {
+        if (type === 'hard') {
+            state.D = 115; state.H = 12.0; state.B = 3.0; state.S = 3.5; state.theta = 15;
+            state.T = 2.5; state.J = 0.9; state.rho_e = 1.15; state.rho_r = 2.75;
+            state.presetName = 'Sert Kaya (Granit/Bazalt)';
+        } else if (type === 'medium') {
+            state.D = 110; state.H = 10.0; state.B = 3.0; state.S = 3.5; state.theta = 15;
+            state.T = 2.4; state.J = 0.9; state.rho_e = 1.15; state.rho_r = 2.65;
+            state.presetName = 'Orta Sert (Kalker)';
+        } else if (type === 'soft') {
+            state.D = 89; state.H = 8.0; state.B = 2.6; state.S = 3.2; state.theta = 10;
+            state.T = 2.1; state.J = 0.6; state.rho_e = 1.15; state.rho_r = 2.30;
+            state.presetName = 'Yumuşak (Marn/Şist)';
+        }
+        refreshPresetUI(type);
+        if (state.benchGroups.length) syncBenchTotals(); else updateInputs();
+        calculateAll();
+    }
+
+const LIMITS = {
+        D: [64, 311], H: [3, 25], B: [0.5, 15], S: [0.5, 20], theta: [0, 35], T: [0.5, 6], J: [0, 3],
+        booster: [0, 5], rho_e: [0.5, 2.5], rho_r: [1.6, 3.8], rho_dry: [0.5, 1.2], globalWaterH: [0, 15],
+        N: [1, 500], rows: [1, 20], R: [10, 5000], M: [1, 100000], K_vib: [1, 5000], e_vib: [0.5, 3]
+    };
+    const ROCK_KEYS = ['D', 'H', 'B', 'S', 'theta', 'T', 'J', 'rho_r'];
+
+    function updateVal(param, val) {
+        if (state.benchGroups.length && (param === 'H' || param === 'N')) return; // gruplardan yönetilir
+        let num = parseFloat(val);
+        if (!isFinite(num)) num = state[param];
+        const lim = LIMITS[param];
+        if (lim) num = Math.min(lim[1], Math.max(lim[0], num));
+        if (param === 'N' || param === 'rows') num = Math.round(num);
+        state[param] = num;
+
+        if (param === 'globalWaterH') {
+            state.holeWaters.fill(state.globalWaterH);
+            renderHoleWaterGrid();
+        }
+        if (param === 'N') {
+            resizeHoleWaters();
+            renderHoleWaterGrid();
+        }
+        if (ROCK_KEYS.includes(param) && state.presetName !== 'Özel Ayar') refreshPresetUI(null);
+        updateInputs();
+        calculateAll();
+    }
+
+    function updateInputs() {
+        const setVal = (id, v, f) => {
+            const n = document.getElementById(`num_${id}`);
+            const r = document.getElementById(`rng_${id}`);
+            const l = document.getElementById(`lbl_${id}`);
+            if (n) n.value = v;
+            if (r) r.value = v;
+            if (l && f !== undefined) l.textContent = Number(v).toFixed(f);
+        };
+        setVal('D', state.D, 0);
+        setVal('H', state.H, 1);
+        setVal('B', state.B, 1);
+        setVal('S', state.S, 1);
+        setVal('T', state.T, 1);
+        setVal('J', state.J, 1);
+        setVal('booster', state.booster, 2);
+        setVal('rho_e', state.rho_e, 2);
+        setVal('rho_r', state.rho_r, 2);
+        setVal('water_h', state.globalWaterH, 1);
+        setVal('N', state.N);
+        setVal('rows', state.rows);
+        setVal('R', state.R);
+        setVal('M', state.M);
+        setVal('K_vib', state.K_vib);
+        setVal('e_vib', state.e_vib);
+        setVal('rho_dry', state.rho_dry);
+
+        const lblTheta = document.getElementById('lbl_theta');
+        if (lblTheta) lblTheta.textContent = `${state.theta}°`;
+        const rngTheta = document.getElementById('rng_theta');
+        if (rngTheta) rngTheta.value = state.theta;
+
+        const multi = state.benchGroups.length > 0;
+        ['num_H', 'rng_H', 'num_N'].forEach(id => {
+            const e = document.getElementById(id);
+            if (e) { e.disabled = multi; e.classList.toggle('opacity-50', multi); }
+        });
+
+        const sel = document.getElementById('sel_explosive');
+        if (sel) {
+            const key = state.rho_e.toFixed(2);
+            sel.value = [...sel.options].some(o => o.value === key) ? key : 'custom';
+        }
+    }
+
+    function onExplosivePreset(val) {
+        if (val === 'custom') return;
+        updateVal('rho_e', parseFloat(val));
+    }
+
+    const gfx = { view: '2d', yaw: -0.6, pitch: 0.55, zoom: 1, auto: false, raf: 0, drag: null };
+    const GROUP_COLORS = ['#38bdf8', '#a78bfa', '#f472b6', '#fbbf24', '#34d399', '#fb7185'];
+
+    // Her grubun delik aralığı (grup yoksa tek aralık)
+    function getGroupRanges() {
+        if (!state.benchGroups.length) return [{ H: state.H, count: state.N, start: 0 }];
+        let st = 0;
+        return state.benchGroups.map(g => { const r = { H: g.H, count: g.count, start: st }; st += g.count; return r; });
+    }
+
+    function setGfxView(v) {
+        gfx.view = v;
+        document.getElementById('panel2d').classList.toggle('hidden', v !== '2d');
+        document.getElementById('panel3d').classList.toggle('hidden', v !== '3d');
+        document.getElementById('btnView2d').classList.toggle('active', v === '2d');
+        document.getElementById('btnView3d').classList.toggle('active', v === '3d');
+        if (v !== '3d') setAutoRotate(false);
+        drawCrossSection();
+    }
+
+    function drawCrossSection() {
+        const tab = document.getElementById('tab_graphics');
+        if (tab && tab.classList.contains('hidden')) return;
+        if (gfx.view === '3d') draw3D(); else draw2DSections();
+    }
+
+    // ===== 2D: her basamak grubu için ayrı kesit =====
+    function draw2DSections() {
+        const list = document.getElementById('profileList');
+        if (!list) return;
+        const groups = getGroupRanges();
+        list.className = groups.length > 1 ? 'grid grid-cols-1 lg:grid-cols-2 gap-3' : 'grid grid-cols-1 gap-3';
+        if (list.children.length !== groups.length) {
+            list.innerHTML = groups.map((g, i) => `
+                <div class="space-y-1">
+                    <div class="flex justify-between text-[11px] font-mono text-slate-400"><span class="font-bold text-brand-400" id="secTitle${i}"></span><span id="secInfo${i}"></span></div>
+                    <div class="w-full bg-slate-950 rounded-xl overflow-hidden border border-slate-800"><canvas class="w-full" width="600" height="340" id="secCanvas${i}"></canvas></div>
+                </div>`).join('');
+        }
+        const Hmax = Math.max(...groups.map(g => g.H));
+        const ppm = Math.min(45, 210 / Hmax, 80 / Math.max(state.J, 1)); // tüm gruplarda ortak ölçek
+        groups.forEach((g, i) => {
+            const ws = state.holeWaters.slice(g.start, g.start + g.count);
+            const avgW = ws.reduce((a, b) => a + b, 0) / (ws.length || 1);
+            document.getElementById('secTitle' + i).textContent = groups.length > 1 ? `Grup ${i + 1} • H = ${g.H.toFixed(1)} m` : `Basamak Kesiti • H = ${g.H.toFixed(1)} m`;
+            document.getElementById('secInfo' + i).textContent = `${g.count} delik • su ort. ${avgW.toFixed(1)} m`;
+            drawSection(document.getElementById('secCanvas' + i), g.H, avgW, ppm);
+        });
+    }
+
+    function drawSection(canvas, H, avgWaterH, ppm) {
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width, h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = isDarkMode ? '#020617' : '#f8fafc';
+        ctx.fillRect(0, 0, w, h);
+
+        const { theta, B, T, J } = state;
+        const thetaRad = (theta * Math.PI) / 180;
+        const tanT = Math.tan(thetaRad), cosT = Math.cos(thetaRad);
+
+        const benchBottomY = 250;
+        const benchHeightPx = H * ppm;
+        const benchTopY = benchBottomY - benchHeightPx;
+        const crestX = 220, toeX = crestX - tanT * benchHeightPx, benchBackX = w - 50, pitFloorX = 40;
+
+        ctx.fillStyle = isDarkMode ? '#1e293b' : '#cbd5e1';
+        ctx.beginPath();
+        ctx.moveTo(pitFloorX, benchBottomY);
+        ctx.lineTo(toeX, benchBottomY);
+        ctx.lineTo(crestX, benchTopY);
+        ctx.lineTo(benchBackX, benchTopY);
+        ctx.lineTo(benchBackX, h);
+        ctx.lineTo(pitFloorX, h);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = isDarkMode ? '#64748b' : '#94a3b8';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        const collarX = Math.min(benchBackX - 20, crestX + B * ppm * 0.7);
+        const collarY = benchTopY;
+        const totalDepthPx = (H + J) * ppm;
+        const bottomX = collarX - tanT * totalDepthPx;
+        const bottomY = collarY + totalDepthPx;
+        const stemPx = Math.min(totalDepthPx, T * cosT * ppm); // T delik ekseni boyunca
+        const stemEndX = collarX - tanT * stemPx, stemEndY = collarY + stemPx;
+        const waterPx = avgWaterH > 0.05 ? Math.min(totalDepthPx - stemPx, avgWaterH * ppm) : 0;
+        const waterTopY = bottomY - waterPx;
+        const waterTopX = bottomX + tanT * waterPx;
+        const dryEndX = waterPx > 0 ? waterTopX : bottomX;
+        const dryEndY = waterPx > 0 ? waterTopY : bottomY;
+        const dryColor = (waterPx > 0 && state.chargeStrategy === 'full_waterproof') ? '#10b981' : '#facc15';
+
+        const line = (x1, y1, x2, y2, col, wd) => {
+            ctx.strokeStyle = col; ctx.lineWidth = wd; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        };
+        line(collarX, collarY, bottomX, bottomY, isDarkMode ? '#0f172a' : '#64748b', 14);
+        line(collarX, collarY, stemEndX, stemEndY, '#f59e0b', 10);
+        if (dryEndY > stemEndY) line(stemEndX, stemEndY, dryEndX, dryEndY, dryColor, 10);
+        if (waterPx > 0) {
+            line(waterTopX, waterTopY, bottomX, bottomY, '#10b981', 10);
+            line(waterTopX - 20, waterTopY, waterTopX + 35, waterTopY, '#0284c7', 1.5);
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = '10px "Inter", sans-serif';
+            ctx.fillText(`≋ Su: ${avgWaterH.toFixed(1)}m`, waterTopX + 40, waterTopY + 3);
+        }
+
+        // Taban kotu ve ölçü yazıları
+        ctx.setLineDash([5, 4]);
+        line(pitFloorX, benchBottomY, benchBackX, benchBottomY, isDarkMode ? '#475569' : '#94a3b8', 1);
+        ctx.setLineDash([]);
+        ctx.fillStyle = isDarkMode ? '#94a3b8' : '#475569';
+        ctx.font = '11px "Inter", sans-serif';
+        ctx.fillText(`H = ${H.toFixed(1)} m   θ = ${theta}°   J = ${J.toFixed(1)} m`, benchBackX - 190, benchTopY - 8);
+        ctx.fillText('Taban (kot 0)', pitFloorX + 4, benchBottomY - 5);
+    }
+
+    // ===== 3D: tüm delikler (etkileşimli, kütüphanesiz) =====
+    function draw3D() {
+        const canvas = document.getElementById('canvas3d');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, Hc = canvas.height;
+        ctx.clearRect(0, 0, W, Hc);
+        ctx.fillStyle = isDarkMode ? '#020617' : '#f8fafc';
+        ctx.fillRect(0, 0, W, Hc);
+
+        const m = computeBlastMetrics();
+        const holes = m.holes, N = holes.length;
+        if (!N) return;
+        const { B, S, J, T, theta } = state;
+        const sinT = Math.sin(theta * Math.PI / 180), cosT = Math.cos(theta * Math.PI / 180);
+        const rowsEff = Math.max(1, Math.min(state.rows, N));
+        const perRow = Math.ceil(N / rowsEff);
+        const Hmax = Math.max(...holes.map(x => x.H));
+        const ranges = getGroupRanges();
+        const grpOf = i => Math.max(0, ranges.findIndex(r => i >= r.start && i < r.start + r.count));
+        const multi = state.benchGroups.length > 0;
+
+        const ox = ((perRow - 1) * S) / 2, oy = ((rowsEff - 1) * B) / 2, oz = Hmax / 2 - J / 2;
+        const rad = 0.5 * Math.hypot(perRow * S + S, rowsEff * B + B, Hmax + J);
+        const scale = (Math.min(W, Hc) / (2 * rad)) * 1.15 * gfx.zoom;
+        const cyw = Math.cos(gfx.yaw), syw = Math.sin(gfx.yaw), cp = Math.cos(gfx.pitch), sp = Math.sin(gfx.pitch);
+        const proj = (x, y, z) => {
+            x -= ox; y -= oy; z -= oz;
+            const x1 = x * cyw - y * syw, y1 = x * syw + y * cyw;
+            return { X: W / 2 + x1 * scale, Y: Hc / 2 - (y1 * sp + z * cp) * scale, d: y1 * cp - z * sp };
+        };
+        const poly = (pts, fill, stroke, alpha) => {
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = fill;
+            ctx.beginPath();
+            pts.forEach((q, k) => k ? ctx.lineTo(q.X, q.Y) : ctx.moveTo(q.X, q.Y));
+            ctx.closePath();
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
+        };
+
+        const pos = holes.map((_, i) => ({ x: (i % perRow) * S, y: Math.floor(i / perRow) * B }));
+        const x0f = -S / 2 - S, x1f = (perRow - 1) * S + S / 2 + S, y0f = -B / 2 - B, y1f = (rowsEff - 1) * B + B / 2 + B * 0.5;
+
+        // Taban zemini
+        poly([proj(x0f, y0f, 0), proj(x1f, y0f, 0), proj(x1f, y1f, 0), proj(x0f, y1f, 0)], isDarkMode ? '#1e293b' : '#cbd5e1', isDarkMode ? '#334155' : '#94a3b8', 0.7);
+
+        // Delik blokları (uzaktan yakına), yalnızca kameraya bakan yüzler
+        const edge = isDarkMode ? 'rgba(148,163,184,0.55)' : 'rgba(71,85,105,0.55)';
+        const order = holes.map((hh, i) => ({ i, d: proj(pos[i].x, pos[i].y, hh.H / 2).d })).sort((a, b) => b.d - a.d);
+        order.forEach(({ i }) => {
+            const { x, y } = pos[i], z1 = holes[i].H;
+            const xa = x - S / 2, xb = x + S / 2, ya = y - B / 2, yb = y + B / 2;
+            const col = multi ? GROUP_COLORS[grpOf(i) % GROUP_COLORS.length] : '#94a3b8';
+            const faces = [
+                { n: [0, 0, 1], a: 0.6, p: [[xa, ya, z1], [xb, ya, z1], [xb, yb, z1], [xa, yb, z1]] },
+                { n: [0, -1, 0], a: 0.38, p: [[xa, ya, 0], [xb, ya, 0], [xb, ya, z1], [xa, ya, z1]] },
+                { n: [0, 1, 0], a: 0.26, p: [[xa, yb, 0], [xb, yb, 0], [xb, yb, z1], [xa, yb, z1]] },
+                { n: [-1, 0, 0], a: 0.3, p: [[xa, ya, 0], [xa, yb, 0], [xa, yb, z1], [xa, ya, z1]] },
+                { n: [1, 0, 0], a: 0.3, p: [[xb, ya, 0], [xb, yb, 0], [xb, yb, z1], [xb, ya, z1]] }
+            ];
+            faces.forEach(f => {
+                const ny = f.n[0] * syw + f.n[1] * cyw;
+                if (ny * cp - f.n[2] * sp < 0) poly(f.p.map(q => proj(q[0], q[1], q[2])), col, edge, f.a);
+            });
+        });
+
+        // Ortalama su seviyesi düzlemi (delik dibinden ölçülür)
+        if (m.avgWaterH > 0.05) {
+            const zw = -J + m.avgWaterH;
+            poly([proj(x0f, y0f, zw), proj(x1f, y0f, zw), proj(x1f, y1f, zw), proj(x0f, y1f, zw)], '#38bdf8', 'rgba(56,189,248,0.8)', 0.22);
+        }
+
+        // Delikler ve şarj segmentleri
+        const wd = Math.max(2.5, (state.D / 1000) * scale);
+        ctx.lineCap = 'round';
+        const holeOrder = holes.map((hh, i) => ({ i, d: proj(pos[i].x, pos[i].y, hh.H / 2).d })).sort((a, b) => b.d - a.d);
+        holeOrder.forEach(({ i }) => {
+            const hh = holes[i], { x, y } = pos[i];
+            const L = (hh.H + J) / cosT, Lc = Math.max(0, L - T);
+            const hw = hh.hw;
+            const Lw = hw > 0.05 ? Math.min(Lc, hw / cosT) : 0;
+            const at = l => proj(x, y - sinT * l, hh.H - cosT * l);
+            const seg = (l0, l1, col, w) => {
+                if (l1 - l0 < 1e-6) return;
+                const a = at(l0), b = at(l1);
+                ctx.strokeStyle = col; ctx.lineWidth = w;
+                ctx.beginPath(); ctx.moveTo(a.X, a.Y); ctx.lineTo(b.X, b.Y); ctx.stroke();
+            };
+            if (hw > 0.05) seg(L - Math.min(L, hw / cosT), L, 'rgba(56,189,248,0.4)', wd * 2.4);
+            seg(0, L, isDarkMode ? '#0f172a' : '#475569', wd + 2);
+            seg(0, Math.min(T, L), '#f59e0b', wd);
+            seg(Math.min(T, L), L - Lw, (Lw > 0 && state.chargeStrategy === 'full_waterproof') ? '#10b981' : '#facc15', wd);
+            seg(L - Lw, L, '#10b981', wd);
+        });
+
+        // Delik numaraları (az delikte)
+        if (N <= 48) {
+            ctx.font = '10px "Inter", sans-serif';
+            ctx.fillStyle = isDarkMode ? '#e2e8f0' : '#0f172a';
+            holes.forEach((hh, i) => { const q = proj(pos[i].x, pos[i].y, hh.H); ctx.fillText(String(i + 1), q.X + 4, q.Y - 5); });
+        }
+
+        // Bilgi / grup göstergesi
+        ctx.font = '12px "Inter", sans-serif';
+        ctx.fillStyle = isDarkMode ? '#cbd5e1' : '#334155';
+        ctx.fillText(`${N} delik • ${rowsEff} sıra × ~${perRow} • B=${B}m S=${S}m • θ=${theta}°`, 14, 22);
+        if (multi) {
+            ranges.forEach((r, k) => {
+                ctx.fillStyle = GROUP_COLORS[k % GROUP_COLORS.length];
+                ctx.fillRect(14, Hc - 22 - (ranges.length - 1 - k) * 18, 11, 11);
+                ctx.fillStyle = isDarkMode ? '#cbd5e1' : '#334155';
+                ctx.fillText(`Grup ${k + 1}: H=${r.H.toFixed(1)} m × ${r.count} delik`, 31, Hc - 12 - (ranges.length - 1 - k) * 18);
+            });
+        }
+    }
+
+    function setView3D(name) {
+        const v = { iso: [-0.6, 0.55], top: [0, 1.5], front: [0, 0.04], side: [-1.5708, 0.04] }[name];
+        if (!v) return;
+        gfx.yaw = v[0]; gfx.pitch = v[1];
+        draw3D();
+    }
+
+    function resetView3D() {
+        gfx.yaw = -0.6; gfx.pitch = 0.55; gfx.zoom = 1;
+        draw3D();
+    }
+
+    function setAutoRotate(on) {
+        gfx.auto = on;
+        cancelAnimationFrame(gfx.raf);
+        const chk = document.getElementById('chk3dAuto');
+        if (chk) chk.checked = on;
+        if (!on) return;
+        const step = () => {
+            const tab = document.getElementById('tab_graphics');
+            if (!gfx.auto || gfx.view !== '3d' || (tab && tab.classList.contains('hidden'))) { setAutoRotate(false); return; }
+            gfx.yaw += 0.006;
+            draw3D();
+            gfx.raf = requestAnimationFrame(step);
+        };
+        gfx.raf = requestAnimationFrame(step);
+    }
+
+    function initGfxControls() {
+        const c = document.getElementById('canvas3d');
+        if (!c) return;
+        c.addEventListener('pointerdown', e => { gfx.drag = { x: e.clientX, y: e.clientY }; c.setPointerCapture(e.pointerId); c.style.cursor = 'grabbing'; });
+        c.addEventListener('pointermove', e => {
+            if (!gfx.drag) return;
+            gfx.yaw += (e.clientX - gfx.drag.x) * 0.01;
+            gfx.pitch = Math.min(1.5, Math.max(0.03, gfx.pitch + (e.clientY - gfx.drag.y) * 0.01));
+            gfx.drag = { x: e.clientX, y: e.clientY };
+            draw3D();
+        });
+        const end = () => { gfx.drag = null; c.style.cursor = 'grab'; };
+        c.addEventListener('pointerup', end);
+        c.addEventListener('pointercancel', end);
+        c.addEventListener('wheel', e => {
+            e.preventDefault();
+            gfx.zoom = Math.min(4, Math.max(0.4, gfx.zoom * (e.deltaY < 0 ? 1.1 : 0.9)));
+            draw3D();
+        }, { passive: false });
+        c.addEventListener('dblclick', resetView3D);
+    }
+    window.addEventListener('DOMContentLoaded', initGfxControls);
+
+        function openReportModal() {
+        const modal = document.getElementById('reportModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        const projVal = document.getElementById('metaProjName')?.value || document.getElementById('ord_project')?.value || '';
+        document.getElementById('rpt_proj').textContent = projVal.trim() !== '' ? projVal : '-';
+        document.getElementById('rpt_date').textContent = new Date().toLocaleDateString('tr-TR');
+        document.getElementById('rpt_rock').textContent = `${state.presetName} (${state.rho_r} t/m³)`;
+        document.getElementById('rpt_holes').textContent = `${state.N} Delik`;
+        document.getElementById('rpt_rows').textContent = `${Math.min(state.rows, state.N)} Sıra`;
+        document.getElementById('rpt_H').textContent = heightsText();
+
+        const m = computeBlastMetrics();
+        document.getElementById('rpt_water_holes').textContent = `${m.wetHolesCount} / ${state.N} Delik`;
+        document.getElementById('rpt_water_h').textContent = `${m.avgWaterH.toFixed(2)} m`;
+        document.getElementById('rpt_water_exp').textContent = `${Math.round(m.totalEmulsionKg).toLocaleString('tr-TR')} kg`;
+        document.getElementById('rpt_dry_exp').textContent = `${Math.round(m.totalAnfoKg).toLocaleString('tr-TR')} kg`;
+        document.getElementById('rpt_booster').textContent = `${m.totalBoosterKg.toFixed(1)} kg`;
+    }
+
+    function closeReportModal() {
+        const modal = document.getElementById('reportModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+function downloadBlob(blob, name) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function exportDetailedHoleCSV() {
+        const m = computeBlastMetrics();
+        const f = (v, d = 2) => Number(v).toFixed(d).replace('.', ',');
+        const rows = ['Delik No;Eğim (derece);Basamak H (m);Derinlik (m);Su Seviyesi (m);Dip Emülsiyon Şarjı (kg);Üst ANFO Şarjı (kg);Booster (kg);Flyrock Emniyet Mesafesi (m)'];
+        m.holes.forEach(h => {
+            rows.push([h.index, state.theta, f(h.H), f(h.L_real), f(h.hw), f(h.emulKg), f(h.anfoKg), f(state.booster), m.flyrockPerson].join(';'));
+        });
+        // BOM: Türkçe karakterlerin Excel'de doğru açılması için
+        downloadBlob(new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' }), `BlastMaster_Kuyu_Sarj_Logu_${Date.now()}.csv`);
+    }
+
+    function exportJSON() {
+        const data = { state, order: orderData, timestamp: new Date().toISOString() };
+        downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), `BlastMaster_Veri_${Date.now()}.json`);
+    }
+
+    let orderData = {
+        company: '',
+        project: '',
+        designer: '',
+        date: new Date().toISOString().split('T')[0],
+        items: [
+            { id: 1, name: 'Kapsüle Duyarlı Emülsiyon Patlayıcı', length: '-', amount: 0, unit: 'Kg', isCustom: false, autoKey: 'booster' },
+            { id: 2, name: 'ANFO', length: '-', amount: 0, unit: 'Kg', isCustom: false, autoKey: 'anfo' },
+            { id: 3, name: 'Emülsiyon ANFO', length: '-', amount: 0, unit: 'Kg', isCustom: false, autoKey: 'emulsion' },
+            { id: 4, name: 'Nonel Kapsül 25/500', length: '12', amount: 24, unit: 'Adet', isCustom: true, isCapsule: true, autoKey: 'holes' },
+            { id: 5, name: 'Nonel Kapsül SD', length: '-', amount: 24, unit: 'Adet', isCustom: false, autoKey: 'holes' },
+            { id: 6, name: '2 mt AL Elektrikli Tavikli Kapsül', length: '2', amount: 2, unit: 'Adet', isCustom: false },
+            { id: 7, name: 'Ateşleme Kablosu (0,50mm)', length: '-', amount: 500, unit: 'mt', isCustom: false },
+        ]
+    };
+
+    // Eski kayıtlara yeni otomatik kalemleri (kapsül adedi, booster) ekler
+    function migrateOrderItems() {
+        orderData.items.forEach(it => {
+            if (!it.autoKey && (it.id === 4 || it.id === 5)) it.autoKey = 'holes';
+        });
+        if (!orderData.items.some(it => it.autoKey === 'booster')) {
+            const idx = orderData.items.findIndex(it => it.autoKey === 'emulsion');
+            orderData.items.splice(idx >= 0 ? idx + 1 : orderData.items.length, 0,
+                { id: Date.now(), name: 'Booster / Primer', length: '-', amount: 0, unit: 'Kg', isCustom: false, autoKey: 'booster' });
+        }
+    }
+
+    function esc(v) {
+        return String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function initOrderFormState() {
+        const saved = localStorage.getItem('blastmaster_order_data');
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                if (parsed.company === 'Şirket Adı') parsed.company = '';
+                if (parsed.project === 'Proje Adı') parsed.project = '';
+                if (parsed.designer === 'Tasarımcı/Mühendis') parsed.designer = '';
+                if (Array.isArray(parsed.items) && parsed.items.length > 0) {
+                    orderData = parsed;
+                    migrateOrderItems();
+                }
+            } catch (e) {
+                console.error('Kayıtlı veri okunamadı:', e);
+            }
+        }
+        refreshAutoQuantities();
+
+        if (document.getElementById('ord_company')) document.getElementById('ord_company').value = orderData.company || '';
+        if (document.getElementById('ord_project')) document.getElementById('ord_project').value = orderData.project || document.getElementById('metaProjName')?.value || '';
+        if (document.getElementById('ord_designer')) {
+            document.getElementById('ord_designer').value = orderData.designer || '';
+            const dispDes = document.getElementById('ord_disp_designer');
+            if (dispDes) dispDes.textContent = orderData.designer?.trim() !== '' ? orderData.designer : '-';
+        }
+        if (document.getElementById('ord_date')) document.getElementById('ord_date').value = orderData.date || new Date().toISOString().split('T')[0];
+
+        renderOrderTable();
+    }
+
+    // Elle değiştirilen (manual) kalemler, "Miktarları Hesaplamadan Güncelle" ile force edilene kadar korunur
+    function refreshAutoQuantities(force = false) {
+        orderData.items.forEach(item => {
+            if (!item.autoKey) return;
+            if (item.manual && !force) return;
+            if (force) delete item.manual;
+            if (item.autoKey === 'emulsion') item.amount = Math.round(calculatedTotals.totalEmulsion);
+            else if (item.autoKey === 'anfo') item.amount = Math.round(calculatedTotals.totalAnfo);
+            else if (item.autoKey === 'booster') item.amount = Math.round(calculatedTotals.totalBooster * 100) / 100;
+            else if (item.autoKey === 'holes') item.amount = state.N;
+        });
+    }
+
+    function refreshOrderFromCalculations() {
+        refreshAutoQuantities(true);
+        renderOrderTable();
+        saveOrderForm(true);
+    }
+
+    function renderOrderTable() {
+        const tbody = document.getElementById('orderTableBody');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+
+        orderData.items.forEach((item, index) => {
+            const tr = document.createElement('tr');
+
+            const tdIdx = document.createElement('td');
+            tdIdx.textContent = index + 1;
+            tr.appendChild(tdIdx);
+
+            const tdName = document.createElement('td');
+            tdName.innerHTML = `<span class="font-semibold text-black">${esc(item.name)}</span>`;
+
+
+            tr.appendChild(tdName);
+
+            const tdLen = document.createElement('td');
+            if (item.isCapsule) {
+                let options = '';
+                for (let m = 6; m <= 25; m++) {
+                    const sel = (String(item.length) === String(m)) ? 'selected' : '';
+                    options += `<option value="${m}" ${sel}>${m} m</option>`;
+                }
+                tdLen.innerHTML = `
+                    <select class="w-20 text-center text-xs" onchange="updateOrderItem(${index}, 'length', this.value)">
+                        ${options}
+                    </select>
+                `;
+            } else {
+                tdLen.innerHTML = `<span class="text-neutral-700">${item.length || '-'}</span>`;
+            }
+            tr.appendChild(tdLen);
+
+            const tdAmount = document.createElement('td');
+            tdAmount.innerHTML = `
+                <input type="number" step="any" class="w-24 text-center font-bold text-black border border-black rounded px-1.5 py-0.5 text-xs"
+                    value="${item.amount !== undefined && item.amount !== null ? item.amount : ''}" onchange="updateOrderItem(${index}, 'amount', this.value)" />
+            `;
+            tr.appendChild(tdAmount);
+
+            const tdUnit = document.createElement('td');
+            tdUnit.innerHTML = `<span class="font-medium text-neutral-800">${item.unit}</span>`;
+            tr.appendChild(tdUnit);
+
+            const tdAction = document.createElement('td');
+            tdAction.className = 'order-no-print';
+            if (item.isCustom) {
+                tdAction.innerHTML = `
+                    <button onclick="removeOrderItem(${index})" class="text-red-600 hover:text-red-800 font-bold px-2 py-0.5 text-xs rounded border border-red-300 hover:bg-red-50" title="Satırı Sil">
+                        ✕ Sil
+                    </button>
+                `;
+            } else {
+                tdAction.innerHTML = `<span class="text-neutral-400 text-xs">-</span>`;
+            }
+            tr.appendChild(tdAction);
+
+            tbody.appendChild(tr);
+        });
+
+        const dispDes = document.getElementById('ord_disp_designer');
+        if (dispDes) {
+            const curDes = document.getElementById('ord_designer')?.value || orderData.designer || '';
+            dispDes.textContent = curDes.trim() !== '' ? curDes : '-';
+        }
+    }
+
+    function updateOrderItem(index, key, val) {
+        if (orderData.items[index]) {
+            if (key === 'amount') {
+                orderData.items[index][key] = val !== '' ? (parseFloat(val) || 0) : '';
+                if (orderData.items[index].autoKey) orderData.items[index].manual = true;
+            } else {
+                orderData.items[index][key] = val;
+            }
+        }
+    }
+
+    function addNonelCapsuleRow() {
+        const nextHoleDepth = Math.round((Math.max(...getHoleHeights()) + state.J) / (Math.cos((state.theta * Math.PI) / 180) || 1));
+        const defaultLen = Math.max(6, Math.min(25, nextHoleDepth || 12));
+
+        orderData.items.push({
+            id: Date.now(),
+            name: 'Nonel Kapsül 25/500',
+            length: String(defaultLen),
+            amount: state.N || 24,
+            unit: 'Adet',
+            isCustom: true,
+            isCapsule: true
+        });
+        renderOrderTable();
+    }
+
+    function removeOrderItem(index) {
+        orderData.items.splice(index, 1);
+        renderOrderTable();
+    }
+
+    function saveOrderForm(silent = false) {
+        orderData.company = document.getElementById('ord_company')?.value || '';
+        orderData.project = document.getElementById('ord_project')?.value || '';
+        orderData.designer = document.getElementById('ord_designer')?.value || '';
+        orderData.date = document.getElementById('ord_date')?.value || '';
+
+        localStorage.setItem('blastmaster_order_data', JSON.stringify(orderData));
+        if (!silent) {
+            alert('✅ Sipariş formu verileri tarayıcınıza başarıyla kaydedildi!');
+        }
+    }
+
+    function updatePreviewContent() {
+        const compVal = (document.getElementById('ord_company')?.value ?? orderData.company ?? '').trim();
+        const projVal = (document.getElementById('ord_project')?.value ?? orderData.project ?? document.getElementById('metaProjName')?.value ?? '').trim();
+        const desVal = (document.getElementById('ord_designer')?.value ?? orderData.designer ?? '').trim();
+        const dateVal = (document.getElementById('ord_date')?.value ?? orderData.date ?? '').trim();
+
+        const prevComp = document.getElementById('previewCompany');
+        const prevProj = document.getElementById('previewProject');
+        const prevDes = document.getElementById('previewDesigner');
+        const prevDesSign = document.getElementById('previewDesignerSign');
+        const prevDate = document.getElementById('previewDate');
+
+        if (prevComp) prevComp.textContent = compVal !== '' ? compVal : '-';
+        if (prevProj) prevProj.textContent = projVal !== '' ? projVal : '-';
+        if (prevDes) prevDes.textContent = desVal !== '' ? desVal : '-';
+        if (prevDesSign) prevDesSign.textContent = desVal !== '' ? desVal : '-';
+        if (prevDate) prevDate.textContent = dateVal !== '' ? dateVal : new Date().toISOString().split('T')[0];
+
+        const pN = document.getElementById('prev_N');
+        const pD = document.getElementById('prev_D');
+        const pH = document.getElementById('prev_H');
+        const pBS = document.getElementById('prev_BS');
+        const pPf = document.getElementById('prev_Pf');
+        const pPPV = document.getElementById('prev_PPV');
+
+        if (pN) pN.textContent = `${state.N} Delik`;
+        if (pD) pD.textContent = `${state.D} mm`;
+        if (pH) pH.textContent = heightsText();
+        if (pBS) pBS.textContent = `${state.B.toFixed(1)} × ${state.S.toFixed(1)} m`;
+        if (pPf) pPf.textContent = document.getElementById('kpi_pf').textContent;
+        if (pPPV) pPPV.textContent = document.getElementById('kpi_ppv').textContent;
+
+        const prevTbody = document.getElementById('previewOrderTableBody');
+        if (prevTbody) {
+            prevTbody.innerHTML = '';
+            const itemsToRender = orderData.items;
+            itemsToRender.forEach((item, idx) => {
+                const amtDisplay = (item.amount !== undefined && item.amount !== null && item.amount !== '')
+                    ? Number(item.amount).toLocaleString('tr-TR')
+                    : '0';
+                const lenDisplay = (item.length && item.length !== '-') ? `${item.length} m` : '-';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${idx + 1}</td>
+                    <td style="text-align: left; padding-left: 10px;"><span class="font-bold">${esc(item.name)}</span></td>
+                    <td class="font-mono">${lenDisplay}</td>
+                    <td class="font-mono font-bold">${amtDisplay}</td>
+                    <td class="font-mono">${item.unit}</td>
+                `;
+                prevTbody.appendChild(tr);
+            });
+        }
+    }
+
+    function triggerOrderPrintConfirm() {
+        refreshAutoQuantities();
+        updatePreviewContent();
+        const modal = document.getElementById('orderPrintModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+    }
+
+    function closeOrderPrintModal() {
+        const modal = document.getElementById('orderPrintModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    }
+
+    // Yalnızca ilgili belgenin basılması için body'ye mod sınıfı eklenir (print-order / print-report)
+    function printWithMode(mode) {
+        document.body.classList.add(mode);
+        const done = () => {
+            document.body.classList.remove(mode);
+            window.removeEventListener('afterprint', done);
+        };
+        window.addEventListener('afterprint', done);
+        window.print();
+    }
+
+    function confirmOrderPrint() {
+        updatePreviewContent();
+        saveOrderForm(true);
+        printWithMode('print-order');
+    }
+
+    function printReport() {
+        printWithMode('print-report');
+    }
+</script>
+
+<!-- ===== MOBİL ALT SEKME ÇUBUĞU ===== -->
+<nav id="mobileNav" class="no-print" aria-label="Sekmeler"></nav>
+<script id="mobileTabsJs">
+(function () {
+    var items = [
+        ['inputs', '🧰', 'Girdiler'],
+        ['calc', '📊', 'Matris'],
+        ['order', '📋', 'Sipariş'],
+        ['sdob', '🎯', 'SDOB'],
+        ['graphics', '📐', 'Kesit'],
+        ['vibration', '⚡', 'Titreşim']
+    ];
+    var nav = document.getElementById('mobileNav');
+    var first = document.getElementById('tabBtn_calc');
+    if (first && first.parentElement) first.parentElement.classList.add('m-orig-tabs');
+
+    function mark(k) {
+        nav.querySelectorAll('button').forEach(function (b) {
+            b.classList.toggle('on', b.getAttribute('data-k') === k);
+        });
+    }
+    function go(k) {
+        var inputs = (k === 'inputs');
+        document.body.classList.toggle('m-inputs', inputs);
+        if (!inputs && typeof switchTab === 'function') switchTab('tab_' + k);
+        mark(k);
+        window.scrollTo(0, 0);
+    }
+    items.forEach(function (it) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.setAttribute('data-k', it[0]);
+        b.innerHTML = '<span>' + it[1] + '</span><span>' + it[2] + '</span>';
+        b.addEventListener('click', function () { go(it[0]); });
+        nav.appendChild(b);
+    });
+    go('inputs');
+})();
+</script>
+
+<!-- ===== PWA: YÜKLEME ÖNERİSİ (yalnızca telefonda, kullanıcı onayıyla) ===== -->
+<div id="pwaBanner" class="no-print" role="dialog" aria-label="Uygulamayı yükle">
+  <div class="pwa-top">
+    <img src="icons/icon-192.png" alt="">
+    <div><b>BlastMaster Pro'yu yükleyin</b><small>Ana ekrana eklenir, tam ekran açılır ve internet olmadan da çalışır.</small></div>
+  </div>
+  <p class="pwa-ios" id="pwaIosHelp" style="display:none">Safari'de alttaki <b>Paylaş</b> düğmesine, ardından <b>Ana Ekrana Ekle</b>'ye dokunun.</p>
+  <div class="pwa-btns">
+    <button type="button" id="pwaNo">Şimdi değil</button>
+    <button type="button" class="pwa-yes" id="pwaYes">Yükle</button>
+  </div>
+</div>
+<script id="pwaJs">
+(function () {
+    var KEY = 'blastmaster_pwa_dismissed';
+    var WAIT_MS = 7 * 24 * 3600 * 1000;
+    var ua = navigator.userAgent || '';
+    var isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    var isMobile = isIOS || /Android/i.test(ua) || (navigator.userAgentData && navigator.userAgentData.mobile === true);
+    var standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+    var banner = document.getElementById('pwaBanner');
+    var yes = document.getElementById('pwaYes');
+    var no = document.getElementById('pwaNo');
+    var deferred = null;
+
+    // Servis çalışanı (yalnızca http/https üzerinde; dosya olarak açılınca atlanır)
+    if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+        window.addEventListener('load', function () {
+            navigator.serviceWorker.register('sw.js').catch(function () {});
+        });
+    }
+
+    function dismissedRecently() {
+        try { var t = parseInt(localStorage.getItem(KEY) || '0', 10); return t && (Date.now() - t) < WAIT_MS; }
+        catch (e) { return false; }
+    }
+    function remember() { try { localStorage.setItem(KEY, String(Date.now())); } catch (e) {} }
+    function hide() { banner.classList.remove('show'); }
+    function show() { if (!standalone && !dismissedRecently()) banner.classList.add('show'); }
+
+    if (!isMobile || standalone) return;
+
+    // Android / Chrome: tarayıcı yükleme olayını verdiğinde kullanıcıya soruyoruz
+    window.addEventListener('beforeinstallprompt', function (e) {
+        e.preventDefault();
+        deferred = e;
+        setTimeout(show, 2500);
+    });
+    window.addEventListener('appinstalled', function () { deferred = null; hide(); });
+
+    yes.addEventListener('click', function () {
+        if (deferred) {
+            hide();
+            deferred.prompt();
+            deferred.userChoice.then(function (c) {
+                if (c.outcome !== 'accepted') remember();
+                deferred = null;
+            });
+        }
+    });
+    no.addEventListener('click', function () { remember(); hide(); });
+
+    // iOS Safari: otomatik yükleme yok, yönerge göster
+    if (isIOS && /^https?:$/.test(location.protocol)) {
+        document.getElementById('pwaIosHelp').style.display = 'block';
+        yes.style.display = 'none';
+        no.textContent = 'Tamam';
+        setTimeout(show, 2500);
+    }
+})();
+</script>
+</body>
+</html>
